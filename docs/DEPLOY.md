@@ -1,43 +1,44 @@
-# Развернуть arcs для нового проекта
+# Deploy arcs for a new project
 
-Тулинг живёт в этом репо (`~/Documents/projects/arcs`). Проект получает только `.arcs/`.
-Метод не засоряет код: всё бухгалтерство в скрытой `.arcs/`, CLI/skill — снаружи.
+The tooling lives in this repo (`~/Documents/projects/arcs`). A project gets only `.arcs/`.
+The method never clutters the code: all bookkeeping sits in the hidden `.arcs/`, the CLI/skill stay outside.
 
-## 1. CLI на PATH (один раз)
-Добавь в `~/.zshrc`:
+## 1. Put the CLI on PATH (once)
+Add to `~/.zshrc`:
 ```bash
 export PATH="$HOME/Documents/projects/arcs/bin:$PATH"
 ```
-Перезапусти шелл → команда `arcs` доступна откуда угодно.
+Restart the shell → `arcs` is available anywhere.
 
-Проверка:
+Check:
 ```bash
 arcs help
 ```
 
-## 2. Завести метод в проекте
-Из корня проекта:
+## 2. Enable the method in a project
+From the project root:
 ```bash
 cd my-project
-arcs init                 # создаёт .arcs/{arcs,goals} + README-пойнтер
+arcs init                 # creates .arcs/{arcs,goals} + a README pointer
 ```
 
-## 3. Работать
+## 3. Work
 ```bash
-arcs new-goal payments            # многоарочная работа → .arcs/goals/01-payments/
-arcs new-arc -g payments stripe   # арка внутри цели
-arcs new-arc spike-redis          # одиночная арка → .arcs/arcs/NN-...
-arcs status                       # доска: что сделано, где узкое горло
+arcs new-goal payments            # multi-arc work → .arcs/goals/01-payments/
+arcs new-arc -g payments stripe   # an arc inside the goal
+arcs new-arc spike-redis          # a standalone arc → .arcs/arcs/NN-...
+arcs status                       # board: what's done, where the bottleneck is
 ```
-Дальше — по `SPEC.md`: input → workspace → output, наружу только output.
+Then follow `SPEC.md`: input → workspace → output, outward only via output.
 
-## 4. Claude-skill (опционально)
-Skill-исходник — `skill/SKILL.md` в этом репо. Установить глобально симлинком (не копией,
-чтоб правка в репо сразу подхватывалась):
+## 4. Claude skill (optional)
+The skill source is `skill/SKILL.md` in this repo. Install it globally via a symlink (not a copy,
+so edits in the repo are picked up immediately):
 ```bash
 ln -s ~/Documents/projects/arcs/skill ~/.claude/skills/arcs
 ```
-После этого агент знает метод и зовёт CLI сам.
+After that the agent knows the method and calls the CLI itself.
 
-## .gitignore проекта
-`.arcs/` обычно **коммитим** (это память работы). Если не хочешь — добавь `.arcs/` в `.gitignore`.
+## Project .gitignore
+`.arcs/` is usually **committed** (it's the memory of the work). If you don't want that, add `.arcs/`
+to `.gitignore`.

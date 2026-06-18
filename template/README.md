@@ -1,8 +1,9 @@
 # <project>
 
-Follows the **arcs** method — см. `../arcs/SPEC.md`.
+Follows the **arcs** method — see `../arcs/SPEC.md`.
 
-- `arcs/` — standalone-арки (одиночный вопрос, чтоб не потерялось)
-- `goals/` — сложная многоарочная работа (проект, deep research)
+- `.arcs/arcs/` — standalone arcs (a one-shot question worth not losing)
+- `.arcs/goals/` — complex multi-arc work (a project, deep research)
 
-Вход в сессию: открыть текущий `goals/<NN-slug>/<NN-slug>-goal.md`.
+Session entry point: open the current `.arcs/goals/<NN-slug>/<NN-slug>-goal.md`.
+Status board: `arcs status`.

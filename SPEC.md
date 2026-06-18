@@ -1,105 +1,104 @@
-# arcs — спецификация метода
+# arcs — method specification
 
-> Метод ведения работы файлами, **независимый от тулзов** (агенты, чаты, IDE — детали реализации,
-> не часть метода). Состояние живёт в файлах, не в эфемерном чате. Два примитива: **arc** и **goal**.
-> Что важно: нумерация, тайтлы, `input/workspace/output`, инкапсуляция, версионируемый статус.
+> A file-based method for running work, **independent of tooling** (agents, chats, IDEs are
+> implementation details, not part of the method). State lives in files, not in an ephemeral chat.
+> Two primitives: **arc** and **goal**. What matters: numbering, titles, `input/workspace/output`,
+> encapsulation, versioned status.
 
-## Мета-директория `.arcs/`
-Вся работа метода живёт в скрытой `.arcs/` в корне проекта — **чтобы не засорять код**:
+## Meta directory `.arcs/`
+All method work lives in a hidden `.arcs/` at the project root — **so it never clutters the code**:
 ```
 <project>/
   .arcs/
-    arcs/    standalone-арки
-    goals/   многоарочные цели
-  <код проекта>
+    arcs/    standalone arcs
+    goals/   multi-arc goals
+  <project code>
 ```
-Тулинг (CLI `arcs`, skill) — снаружи, в репо метода; проект получает только `.arcs/`.
+Tooling (the `arcs` CLI, the skill) stays outside, in the method repo; a project gets only `.arcs/`.
 
 ---
 
-## Два примитива
+## Two primitives
 
-### Arc — атом работы
-Один законченный кусок. Папка `NN-<title>/` (нумерация `01`, `02`… + тайтл-описание содержимого).
+### Arc — atom of work
+One finished chunk. Folder `NN-<title>/` (numbering `01`, `02`… + a title describing the content).
 
-| Папка / файл | Роль | ООП-аналог |
+| Folder / file | Role | OOP analogue |
 |---|---|---|
-| `input/` | что зашло в контекст работы — сид, требования, артефакты-предки | аргументы конструктора |
-| `workspace/` | вся работа по ходу — артефакты скидываются сюда | приватное состояние |
-| `output/` | **самостоятельный** результат — наружу тащат только отсюда | публичный интерфейс |
-| `arc.md` | малый пойнтер: goal · status · пойнтеры на ключевой output | — |
+| `input/` | what entered the work context — seed, requirements, ancestor artifacts | constructor args |
+| `workspace/` | all work in progress — artifacts dumped here | private state |
+| `output/` | **self-contained** result — the outside reads ONLY this | public interface |
+| `arc.md` | small pointer: goal · status · pointers to key output | — |
 
-**Инкапсуляция (жёсткое правило):** что нужно следующей работе — **выводимо из `output/` одного**.
-`workspace/` приватен, наружу не течёт. `input/` — то, что пришло. Закрыл арку → `output/` стоит сам.
+**Encapsulation (hard rule):** anything the next step needs must be **derivable from `output/` alone**.
+`workspace/` is private, never leaks out. `input/` is what came in. Close the arc → `output/` stands on its own.
 
-**`arc.md` — паспорт (минимальный, не растёт):**
+**`arc.md` — passport (minimal, does not grow):**
 ```markdown
 # NN-<slug>
-goal:   <одна строка — что закрываем>
+goal:   <one line — what we close>
 status: active | blocked | done
-closes: goal <NN-slug> step <N>   ← если арка цели
-## output → пойнтеры
-- `output/...` — что наружу
+closes: goal <NN-slug> step <N>   ← if it's a goal's arc
+## output → pointers
+- `output/...` — what goes outward
 ```
-Всё остальное (как, поток, заметки, итерации) → `workspace/`.
+Everything else (how, flow, notes, iterations) → `workspace/`.
 
-**Жизненный цикл (ритм):**
+**Lifecycle (the rhythm):**
 ```
-открыл арку → зафиксил input → работа в workspace → закрыл → output самостоятельный
-  → обновил arc.md → (если в цели) подтянул пойнтер в goal → следующая
+open arc → fix input → work in workspace → close → self-contained output
+  → update arc.md → (if inside a goal) pull a pointer into the goal → next
 ```
 
-### Два дома арок
-- **`.arcs/arcs/`** — standalone-арки. Нужен ответ, но чтобы не потерялся в эфемерном чате →
-  кидаю отдельной аркой. Одиночная, без цели.
-- **`.arcs/goals/NN-<title>/arcs/`** — арки внутри цели. Осмысленная многоарочная работа.
+### Two homes for arcs
+- **`.arcs/arcs/`** — standalone arcs. Need an answer but don't want it lost in the ephemeral chat →
+  drop a separate arc. One-shot, no goal.
+- **`.arcs/goals/NN-<title>/arcs/`** — arcs inside a goal. Meaningful multi-arc work.
 
 ---
 
-## Goal — для сложной работы, что не лезет в одну арку
-**Goal = арка с целью.** Тот же скелет, что у арки (`input/ workspace/ output/`), плюс свои `arcs/`
-и версионируемый статус-док. Для ведения проекта / глубокого research. Папка `goals/NN-<title>/`:
+## Goal — for complex work that won't fit one arc
+**Goal = an arc with a purpose.** Same skeleton as an arc (`input/ workspace/ output/`), plus its own
+`arcs/` and a versioned status doc. For running a project / deep research. Folder `goals/NN-<title>/`:
 
-| | Роль |
+| | Role |
 |---|---|
-| `NN-<slug>-goal.md` | **цель + «что сделано / где мы»**, кратко. Версионируется ведущим номером. |
-| `input/` | что зашло в цель — сид, контекст, требования (как у арки) |
-| `workspace/` | вспомогательные файлы цели (метод, черновики) |
-| `output/` | **самостоятельный** финал цели, когда закрыта (как у арки) |
-| `arcs/` | арки этой цели (под-работа по шагам) |
+| `NN-<slug>-goal.md` | **goal + "what's done / where we are"**, briefly. Versioned by leading number. |
+| `input/` | what entered the goal — seed, context, requirements (like an arc) |
+| `workspace/` | helper files for the goal (method, drafts) |
+| `output/` | **self-contained** final deliverable, once the goal closes (like an arc) |
+| `arcs/` | arcs of this goal (sub-work by steps) |
 
-Разница арка↔цель: у цели есть `arcs/` (многоарочная) + версионируемый статус-док. Инкапсуляция та же:
-наружу — только через `output/`.
+Arc vs goal: a goal has `arcs/` (multi-arc) + a versioned status doc. Encapsulation is the same:
+outward only through `output/`.
 
-### Версионирование цели (номером, не правкой)
-- Файлы: `01-<slug>-goal.md`, `02-<slug>-goal.md`, `03-<slug>-goal.md`… (напр. `01-cv-goal.md`).
-- **Высший номер = текущий = приоритетный.** Старые = история, не трогаются.
-- Обновить цель = дропнуть новую версию рядом. Не мучаешь голову правкой in-place.
-- Меняем редко и осознанно. Версия фиксирует разворот.
+### Versioning a goal (by number, not by editing)
+- Files: `01-<slug>-goal.md`, `02-<slug>-goal.md`, `03-<slug>-goal.md`… (e.g. `01-cv-goal.md`).
+- **Highest number = current = authoritative.** Old ones = history, never touched.
+- Update a goal = drop a new version next to it. No agonizing over in-place edits.
+- Change rarely and deliberately. A version captures a pivot.
 
-Текущий `NN-<slug>-goal.md` всегда отвечает кратко: цель, какие арки не закрыты, где я глобально.
-
----
-
-## Инварианты
-- В `output/` нет факта/заявки, не обоснованной в `input/` или процессе.
-- `workspace/` — расходник: артефакт ре-генерится, финал в `output/` руками мимо процесса не подкручиваем.
-- `arc.md` / `NN-slug-goal.md` — единственный источник статуса.
-- Нумерация сквозная внутри одной `arcs/`.
-
-## Зачем так
-- **Не теряюсь:** вынырнул из арки → открыл текущий `NN-<slug>-goal.md` → вижу всю картину.
-- **Передаётся:** `output/` самодостаточен → другой агент/сессия продолжает без контекста чата.
-- **Автоматизируемо:** скрипт сканит `arc.md`/`goal.md` → статусы, незакрытые, пойнтеры (`bin/arcs-status`).
+The current `NN-<slug>-goal.md` always answers briefly: the goal, which arcs are open, where I am globally.
 
 ---
 
-## Использование в проекте (CLI)
+## Invariants
+- `output/` contains no fact/claim not grounded in `input/` or the process.
+- `workspace/` is disposable: any artifact is re-generable; never hand-tweak the final in `output/` outside the process.
+- `arc.md` / `NN-slug-goal.md` is the single source of status.
+- Numbering is contiguous within one `arcs/`.
+
+## Why this way
+- **Don't get lost:** surfacing from an arc → open the current `NN-<slug>-goal.md` → see the whole picture.
+- **Hands off cleanly:** `output/` is self-contained → another agent/session continues without chat context.
+- **Automatable:** a script scans `arc.md`/`goal.md` → statuses, open items, pointers (`arcs status`).
+
+## Using it in a project (CLI)
 ```
-arcs init                     создать .arcs/{arcs,goals} + README-пойнтер
-arcs new-arc <slug>           standalone-арка в .arcs/arcs/
-arcs new-arc -g <goal> <slug> арка внутри цели
-arcs new-goal <slug>          цель в .arcs/goals/
-arcs status                   доска статуса
+arcs init                     create .arcs/{arcs,goals} + a README pointer
+arcs new-arc <slug>           standalone arc in .arcs/arcs/
+arcs new-arc -g <goal> <slug> arc inside a goal
+arcs new-goal <slug>          goal in .arcs/goals/
+arcs status                   the status board
 ```
-Развёртывание для нового проекта — `docs/DEPLOY.md`.
+Deploying for a new project — `docs/DEPLOY.md`.

@@ -28,30 +28,30 @@ arc_md() {     # $1=path $2=slug
   cat > "$1/arc.md" <<EOF
 # $2
 
-goal: <одна строка — что закрываем>
+goal: <one line — what this arc closes>
 status: active
 
 ## input
-<что зашло>
+<what came in>
 
-## output → пойнтеры
-- <output/... — что наружу>
+## output → pointers
+- <output/... — what goes outward>
 EOF
 }
 
 goal_md() {    # $1=path $2=NN $3=slug
   cat > "$1/$2-$3-goal.md" <<EOF
-# $2-$3-goal — <цель>
+# $2-$3-goal — <goal>
 
-goal: <цель — одна строка>
+goal: <goal — one line>
 status: active
-version: $2 (высший номер = текущий)
+version: $2 (highest number = current)
 
-## Где мы сейчас
-<узкое горло>
+## Where we are
+<current bottleneck>
 
-## Арки цели
-<NN-arc → output → статус>
+## Arcs of this goal
+<NN-arc → output → status>
 EOF
 }
 

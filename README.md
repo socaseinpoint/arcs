@@ -1,33 +1,33 @@
 # arcs
 
-Метод ведения работы файлами. Два примитива — **arc** (атом работы) и **goal** (арка с целью,
-держит вложенные арки). Состояние в файлах, не в эфемерном чате. Независим от тулзов.
-Вся работа в скрытой `.arcs/` — **не засоряет код проекта**.
+A file-based method for running work. Two primitives — **arc** (atom of work) and **goal** (an arc
+with a purpose that holds nested arcs). State lives in files, not in an ephemeral chat. Tool-independent.
+All work lives in a hidden `.arcs/` — **it never clutters project code**.
 
 ```
-arcs/                        ← этот репо (тулинг + спека, снаружи проектов)
-  SPEC.md                    метод целиком
+arcs/                        ← this repo (tooling + spec, lives outside projects)
+  SPEC.md                    the full method
   bin/arcs                   CLI: init · new-arc · new-goal · status
-  template/.arcs/            скелет (arcs/ + goals/)
-  skill/SKILL.md             Claude-skill (симлинк в ~/.claude/skills/)
-  docs/DEPLOY.md             как развернуть для нового проекта
+  template/.arcs/            skeleton (arcs/ + goals/)
+  skill/SKILL.md             Claude skill (symlink into ~/.claude/skills/)
+  docs/DEPLOY.md             how to deploy for a new project
 ```
 
-## Суть за 20 секунд
+## In 20 seconds
 ```
-.arcs/                       мета-дир в корне проекта
-  arcs/NN-slug/              атом: input → workspace → output (наружу только output) + arc.md
-  goals/NN-slug/             арка с целью + свои арки
-    NN-slug-goal.md          краткий статус, версия = ведущий номер (высший = текущий)
+.arcs/                       meta dir at the project root
+  arcs/NN-slug/              atom: input → workspace → output (outward only via output) + arc.md
+  goals/NN-slug/             an arc with a purpose + its own arcs
+    NN-slug-goal.md          brief status, version = leading number (highest = current)
     input/ workspace/ output/ arcs/
 ```
-Вынырнул из работы → открыл текущий `*-goal.md` → видишь где ты. Не теряешься.
+Surface from work → open the current `*-goal.md` → see where you are. Don't get lost.
 
-## Старт
+## Start
 ```bash
-export PATH="$HOME/Documents/projects/arcs/bin:$PATH"   # один раз в ~/.zshrc
+export PATH="$HOME/Documents/projects/arcs/bin:$PATH"   # once, in ~/.zshrc
 cd my-project && arcs init
-arcs new-goal <slug>     # или: arcs new-arc <slug>
+arcs new-goal <slug>     # or: arcs new-arc <slug>
 arcs status
 ```
-Подробно — `docs/DEPLOY.md`.
+Details — `docs/DEPLOY.md`.
