@@ -95,10 +95,15 @@ The current `NN-<slug>-goal.md` always answers briefly: the goal, which arcs are
 
 ## Using it in a project (CLI)
 ```
-arcs init                     create .arcs/{arcs,goals} + a README pointer
+arcs init [en|ru|es]          create .arcs/ + pick the arc language (asks if a TTY)
+arcs lang [en|ru|es]          show or change this project's arc language
 arcs new-arc <slug>           standalone arc in .arcs/arcs/
 arcs new-arc -g <goal> <slug> arc inside a goal
 arcs new-goal <slug>          goal in .arcs/goals/
-arcs status                   the status board
+arcs status                   the status board (also shows the language)
+arcs update                   git pull the method + re-wire skill/hooks
 ```
-Deploying for a new project — `docs/DEPLOY.md`.
+**Language.** Each project picks the language its arcs are written in (`en`, `ru`, or `es`) at
+`arcs init`, stored in `.arcs/config`. Templates and arc prose follow it; the field keys
+(`goal:`, `status:`) stay English so the tooling is language-agnostic. Change anytime: `arcs lang <code>`.
+Setup, updating, and the enforcement hooks (skill / arcs-hook / arcs-gate) — `docs/DEPLOY.md`.

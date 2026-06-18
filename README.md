@@ -14,15 +14,18 @@ exec $SHELL                      # reload shell so `arcs` is found
 
 # 2. use it in any project
 cd my-project
-arcs init                        # creates the hidden .arcs/ dir
+arcs init                        # creates .arcs/ and asks the arc language (en/ru/es)
 arcs new-goal payments           # start multi-arc work
 arcs new-arc spike-redis         # or a one-off standalone arc
-arcs status                      # see what's done and where you are
+arcs status                      # see what's done, where you are, and the language
+arcs lang es                     # change the language anytime
 ```
+Pick the language your arcs are written in at `init` (`en`/`ru`/`es`) — agents then keep the arc
+content in it. Change later with `arcs lang <code>`.
 
 Update later — one command, from anywhere:
 ```bash
-arcs update                      # git pull the method + relink the Claude skill
+arcs update                      # git pull + re-wire PATH, skill, and hooks (idempotent)
 ```
 (then restart your Claude Code session so it reloads the skill)
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # arcs — file-based work method CLI (arc + goal).
-# Subcommands: init · new-arc · new-goal · status · update · help
+# Subcommands: init · new-arc · new-goal · status · lang · update · help
 # Work lives in a hidden meta dir: .arcs/{arcs,goals}/
 set -euo pipefail
 
@@ -21,6 +21,12 @@ base_dir() {   # echo the meta base: .arcs if present, else create it
   echo ".arcs"
 }
 
+lang_of() {    # project's arc language from .arcs/config (default en)
+  local l=""
+  [ -f .arcs/config ] && l="$(grep -m1 '^lang=' .arcs/config 2>/dev/null | cut -d= -f2 || true)"
+  echo "${l:-en}"
+}
+
 next_num() {   # next zero-padded NN in a dir of NN-<slug>/ entries
   local dir="$1" max=0 n
   if [ -d "$dir" ]; then
@@ -33,8 +39,37 @@ next_num() {   # next zero-padded NN in a dir of NN-<slug>/ entries
   printf "%02d" $((max + 1))
 }
 
-arc_md() {     # $1=path $2=slug
-  cat > "$1/arc.md" <<EOF
+# Templates. Field KEYS (goal:/status:/version:) stay English so the parser is language-agnostic;
+# only the human placeholder text + headings are localized.
+arc_md() {     # $1=path $2=slug $3=lang
+  case "${3:-en}" in
+    ru) cat > "$1/arc.md" <<EOF
+# $2
+
+goal: <одна строка — что закрывает арка>
+status: active
+
+## input
+<что зашло>
+
+## output → пойнтеры
+- <output/... — что наружу>
+EOF
+    ;;
+    es) cat > "$1/arc.md" <<EOF
+# $2
+
+goal: <una línea — qué cierra este arco>
+status: active
+
+## input
+<qué entró>
+
+## output → punteros
+- <output/... — qué sale>
+EOF
+    ;;
+    *) cat > "$1/arc.md" <<EOF
 # $2
 
 goal: <one line — what this arc closes>
@@ -46,10 +81,41 @@ status: active
 ## output → pointers
 - <output/... — what goes outward>
 EOF
+    ;;
+  esac
 }
 
-goal_md() {    # $1=path $2=NN $3=slug
-  cat > "$1/$2-$3-goal.md" <<EOF
+goal_md() {    # $1=path $2=NN $3=slug $4=lang
+  case "${4:-en}" in
+    ru) cat > "$1/$2-$3-goal.md" <<EOF
+# $2-$3-goal — <цель>
+
+goal: <цель — одна строка>
+status: active
+version: $2 (высший номер = текущий)
+
+## Где мы сейчас
+<узкое горло>
+
+## Арки цели
+<NN-arc → output → статус>
+EOF
+    ;;
+    es) cat > "$1/$2-$3-goal.md" <<EOF
+# $2-$3-goal — <objetivo>
+
+goal: <objetivo — una línea>
+status: active
+version: $2 (número más alto = actual)
+
+## Dónde estamos
+<cuello de botella>
+
+## Arcos de este objetivo
+<NN-arc → output → estado>
+EOF
+    ;;
+    *) cat > "$1/$2-$3-goal.md" <<EOF
 # $2-$3-goal — <goal>
 
 goal: <goal — one line>
@@ -62,27 +128,49 @@ version: $2 (highest number = current)
 ## Arcs of this goal
 <NN-arc → output → status>
 EOF
+    ;;
+  esac
 }
 
 # --- commands --------------------------------------------------------------
 cmd_init() {
-  local b; b=$(base_dir)
+  local b lang="${1:-}"
+  b=$(base_dir)
+  if [ -z "$lang" ]; then
+    if [ -t 0 ]; then printf "arcs: language for arcs in this project [en/ru/es] (default en): "; read -r lang || true; fi
+    lang="${lang:-en}"
+  fi
+  case "$lang" in en|ru|es) ;; *) echo "arcs: unknown lang '$lang', using en" >&2; lang=en ;; esac
+  printf 'lang=%s\n' "$lang" > "$b/config"
   [ -f README.md ] || cat > README.md <<EOF
 # $(basename "$PWD")
 
-Follows the **arcs** method. Work lives in \`.arcs/\` (meta).
-- \`.arcs/arcs/\`  — standalone арки
-- \`.arcs/goals/\` — многоарочные цели
-Status: \`arcs status\`
+Follows the **arcs** method. Work lives in \`.arcs/\` (meta), kept in: $lang.
+- \`.arcs/arcs/\`  — standalone arcs
+- \`.arcs/goals/\` — multi-arc goals
+Status: \`arcs status\` · change language: \`arcs lang <en|ru>\`
 EOF
-  echo "arcs: initialized $b/ (arcs, goals)"
+  echo "arcs: initialized $b/ (lang=$lang)"
+}
+
+cmd_lang() {
+  [ -d .arcs ] || die "no .arcs/ here — run: arcs init"
+  local code="${1:-}"
+  if [ -z "$code" ]; then echo "lang=$(lang_of)"; return; fi
+  case "$code" in en|ru|es) ;; *) die "supported langs: en, ru, es" ;; esac
+  if [ -f .arcs/config ] && grep -q '^lang=' .arcs/config; then
+    local tmp; tmp="$(mktemp)"; sed "s/^lang=.*/lang=$code/" .arcs/config > "$tmp" && mv "$tmp" .arcs/config
+  else
+    printf 'lang=%s\n' "$code" >> .arcs/config
+  fi
+  echo "arcs: lang set to $code (existing files unchanged; new arcs/goals use $code)"
 }
 
 cmd_new_arc() {
-  local goal_slug="" slug b dir nn
+  local goal_slug="" slug b dir nn lang
   if [ "${1:-}" = "-g" ]; then goal_slug="$2"; shift 2; fi
   slug="${1:-}"; [ -n "$slug" ] || die "usage: arcs new-arc [-g <goal-slug>] <slug>"
-  b=$(base_dir)
+  b=$(base_dir); lang=$(lang_of)
   if [ -n "$goal_slug" ]; then
     local gdir; gdir=$(ls -d "$b"/goals/[0-9][0-9]-"$goal_slug"/ 2>/dev/null | head -1) || true
     [ -n "$gdir" ] || die "goal '$goal_slug' not found in $b/goals/"
@@ -92,19 +180,19 @@ cmd_new_arc() {
   fi
   nn=$(next_num "$dir")
   mkdir -p "$dir/$nn-$slug"/{input,workspace,output}
-  arc_md "$dir/$nn-$slug" "$nn-$slug"
-  echo "arcs: created $dir/$nn-$slug (input/workspace/output + arc.md)"
+  arc_md "$dir/$nn-$slug" "$nn-$slug" "$lang"
+  echo "arcs: created $dir/$nn-$slug (input/workspace/output + arc.md, lang=$lang)"
 }
 
 cmd_new_goal() {
-  local slug="${1:-}" b nn dir
+  local slug="${1:-}" b nn dir lang
   [ -n "$slug" ] || die "usage: arcs new-goal <slug>"
-  b=$(base_dir)
+  b=$(base_dir); lang=$(lang_of)
   nn=$(next_num "$b/goals")
   dir="$b/goals/$nn-$slug"
   mkdir -p "$dir"/{input,workspace,output,arcs}
-  goal_md "$dir" "$nn" "$slug"
-  echo "arcs: created $dir (input/workspace/output/arcs + $nn-$slug-goal.md)"
+  goal_md "$dir" "$nn" "$slug" "$lang"
+  echo "arcs: created $dir (input/workspace/output/arcs + $nn-$slug-goal.md, lang=$lang)"
 }
 
 cmd_status() {
@@ -112,6 +200,7 @@ cmd_status() {
   field() { grep -m1 -E "^$2:" "$1" 2>/dev/null | sed -E "s/^$2:[[:space:]]*//" || true; }
   print_arc() { local md="$1" ind="$2" n; n=$(dirname "$md" | xargs basename)
     printf "%s%-34s %-9s %s\n" "$ind" "$n" "[$(field "$md" status)]" "$(field "$md" goal)"; }
+  [ -d "$b" ] && echo "lang: $( [ -d .arcs ] && lang_of || echo en )"
   if [ -d "$b/goals" ]; then echo "GOALS"
     for g in "$b"/goals/*/; do [ -d "$g" ] || continue
       local cur; cur=$(ls "$g"/*-goal.md 2>/dev/null | sort | tail -1 || true)
@@ -129,21 +218,22 @@ cmd_update() {
   git -C "$repo" pull --ff-only || die "git pull failed in $repo"
   # re-run the installer so new tooling (skill, hooks) is wired in — idempotent.
   if [ -x "$repo/install.sh" ]; then
-    bash "$repo/install.sh" >/dev/null 2>&1 && echo "arcs: tooling re-wired (PATH · skill · hook)"
+    bash "$repo/install.sh" >/dev/null 2>&1 && echo "arcs: tooling re-wired (PATH · skill · hooks)"
   elif [ -d "$HOME/.claude/skills" ]; then
     ln -sfn "$repo/skill" "$HOME/.claude/skills/arcs"
   fi
-  echo "arcs: up to date — restart your Claude Code session to reload skill + hook"
+  echo "arcs: up to date — restart your Claude Code session to reload skill + hooks"
 }
 
 cmd_help() { sed -n '2,4p' "$0" | sed 's/^# \{0,1\}//'; cat <<EOF
 
-  arcs init                         create .arcs/{arcs,goals} + project README
+  arcs init [en|ru|es]              create .arcs/ + pick the arc language (asks if a TTY)
+  arcs lang [en|ru|es]              show or change this project's arc language
   arcs new-arc <slug>               new standalone arc in .arcs/arcs/
   arcs new-arc -g <goal> <slug>     new arc inside a goal
   arcs new-goal <slug>              new goal in .arcs/goals/
   arcs status                       print the board
-  arcs update                       git pull the method + relink the skill
+  arcs update                       git pull the method + re-wire skill/hooks
 EOF
 }
 
@@ -151,6 +241,7 @@ EOF
 sub="${1:-help}"; shift || true
 case "$sub" in
   init)      cmd_init "$@" ;;
+  lang)      cmd_lang "$@" ;;
   new-arc)   cmd_new_arc "$@" ;;
   new-goal)  cmd_new_goal "$@" ;;
   status)    cmd_status "$@" ;;

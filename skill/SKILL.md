@@ -19,6 +19,10 @@ in the arcs repo (skill is symlinked from `<arcs-repo>/skill`, so spec is at `..
 4. Write the user's request/spec into the arc's `input/`. Start a plan/notes file in `workspace/`.
 5. Only now do the work — keeping notes flowing into `workspace/` as you go, not dumped at the end.
 
+**Language:** write all arc prose (goal, notes, output) in the project's language — `lang=en|ru|es`
+in `.arcs/config`, also shown by `arcs status`. Field keys (`goal:`, `status:`) stay as-is. The user
+changes it with `arcs lang <code>`; don't switch languages on your own mid-project.
+
 ## The arc is the record, even when the deliverable is code
 Most tasks ship their artifact elsewhere (source files in the repo). The arc does **not** replace that —
 it's the **spine/log** of the work:
