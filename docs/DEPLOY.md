@@ -38,21 +38,27 @@ arcs status                       # board: what's done, where the bottleneck is
 ```
 Then follow `SPEC.md`: input → workspace → output, outward only via output.
 
-## Enforcement hook (recommended)
-The skill *advises* the agent to use arcs. The hook *enforces* it: on every session start and prompt
-in an opted-in project (`.arcs/` present), it injects a reminder (and the live board at session start)
-so the agent can't quietly skip the method. Silent in projects without `.arcs/`.
+## Enforcement (recommended)
+Three layers, weakest to strongest:
+1. **skill** — *advises* the agent to use arcs.
+2. **`arcs-hook`** (SessionStart + UserPromptSubmit) — injects a reminder + the live board each
+   session/prompt in an opted-in project, so the agent can't quietly forget.
+3. **`arcs-gate`** (PreToolUse `Edit|Write|MultiEdit`) — *hard* block: refuses edits to project files
+   while `.arcs/` has no active arc, forcing the agent to `arcs new-arc`/`new-goal` first. Edits to
+   files inside `.arcs/` are always allowed; projects without `.arcs/` are never affected.
 
-`install.sh` registers it automatically (in `~/.claude/settings.json`, with a `.bak` backup, idempotent).
-To add it by hand, merge this into `~/.claude/settings.json` (replace the path with your clone):
+`install.sh` registers both hooks automatically (in `~/.claude/settings.json`, `.bak` backup, idempotent).
+To add by hand, merge into `~/.claude/settings.json` (replace `<DIR>` with your clone path):
 ```json
 {
   "hooks": {
     "SessionStart":     [{ "hooks": [{ "type": "command", "command": "<DIR>/hooks/arcs-hook" }] }],
-    "UserPromptSubmit": [{ "hooks": [{ "type": "command", "command": "<DIR>/hooks/arcs-hook" }] }]
+    "UserPromptSubmit": [{ "hooks": [{ "type": "command", "command": "<DIR>/hooks/arcs-hook" }] }],
+    "PreToolUse":       [{ "matcher": "Edit|Write|MultiEdit", "hooks": [{ "type": "command", "command": "<DIR>/hooks/arcs-gate" }] }]
   }
 }
 ```
+After wiring, restart your Claude Code session.
 
 ## Updating
 One command, from anywhere — the CLI knows where it was cloned:

@@ -46,12 +46,14 @@ arcs/                        tooling + spec, lives outside your projects
   install.sh                 PATH + Claude skill setup
   template/.arcs/            skeleton (arcs/ + goals/)
   skill/SKILL.md             Claude skill (advises the agent)
-  hooks/arcs-hook            Claude hook (enforces the method, wired by install.sh)
+  hooks/arcs-hook            reminder hook (SessionStart + UserPromptSubmit)
+  hooks/arcs-gate            hard gate (PreToolUse: no edits until an arc is open)
   docs/DEPLOY.md             setup guide
   examples/basic/            a filled-in .arcs walkthrough
 ```
 
-Skill = advice, hook = enforcement: in an opted-in project the hook reminds the agent every
-session/prompt to open an arc before working, so it can't quietly skip the method.
+Three enforcement layers (wired by `install.sh`): the **skill** advises, **arcs-hook** reminds every
+session/prompt, **arcs-gate** hard-blocks edits to project files until an arc is open. In a project
+without `.arcs/` nothing fires — `arcs init` is the opt-in.
 
 Landing (what & why, RU/EN): https://arcs-socaseinpoints-projects.vercel.app

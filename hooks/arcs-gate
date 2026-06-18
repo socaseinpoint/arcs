@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# arcs-gate — Claude Code PreToolUse hook (matcher: Edit|Write|MultiEdit).
+# In an opted-in project (.arcs/ present), blocks edits to project files until an arc is open.
+# This is the hard enforcement: the agent must `arcs new-arc`/`new-goal` before touching code.
+# Edits to files inside .arcs/ are always allowed. Silent (allow) outside arcs projects.
+set -euo pipefail
+
+input="$(cat 2>/dev/null || true)"
+
+# Opted in? (.arcs/ in cwd or an ancestor)
+dir="$PWD"
+while [ "$dir" != "/" ] && [ ! -d "$dir/.arcs" ]; do dir="$(dirname "$dir")"; done
+[ -d "$dir/.arcs" ] || exit 0
+
+fp="$(printf '%s' "$input" | python3 -c 'import json,sys
+try: print(json.load(sys.stdin).get("tool_input",{}).get("file_path",""))
+except Exception: print("")' 2>/dev/null || echo "")"
+
+# Always allow writing the arcs bookkeeping itself.
+case "$fp" in *"/.arcs/"*|*".arcs/"*) exit 0 ;; esac
+
+# Allow once at least one arc/goal is active.
+if grep -rqsE '^status:[[:space:]]*active' "$dir/.arcs" 2>/dev/null; then exit 0; fi
+
+# Otherwise block and tell the agent what to do.
+echo "[arcs] Blocked: this project uses the arcs method but no arc is open. Run \`arcs new-arc <slug>\` (one-off) or \`arcs new-goal <slug>\` first — put the request in its input/, then make this edit. Don't edit project files with .arcs/ empty." >&2
+exit 2
