@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# arcs-hook — Claude Code hook that enforces the arcs method in projects that opted in.
+# Wired for SessionStart + UserPromptSubmit. Silent in projects without a .arcs/ dir.
+# stdout is injected into the agent's context by Claude Code.
+set -euo pipefail
+
+input="$(cat 2>/dev/null || true)"
+
+# Only act in an opted-in project (.arcs/ in cwd or an ancestor).
+dir="$PWD"
+while [ "$dir" != "/" ] && [ ! -d "$dir/.arcs" ]; do dir="$(dirname "$dir")"; done
+[ -d "$dir/.arcs" ] || exit 0
+
+event="$(printf '%s' "$input" | python3 -c 'import json,sys
+try: print(json.load(sys.stdin).get("hook_event_name",""))
+except Exception: print("")' 2>/dev/null || echo "")"
+
+# Resolve the arcs repo (this script lives in <repo>/hooks), to call the CLI.
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ]; do
+  D="$(cd -P "$(dirname "$SOURCE")" && pwd)"; SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$D/$SOURCE"
+done
+ARCS="$(cd -P "$(dirname "$SOURCE")/.." && pwd)/bin/arcs"
+
+case "$event" in
+  SessionStart)
+    echo "[arcs] This project uses the arcs method (.arcs/ present). Current board:"
+    ( cd "$dir" && "$ARCS" status 2>/dev/null ) || true
+    echo "Before any non-trivial task: open an arc/goal FIRST, then work input→workspace→output."
+    ;;
+  *)
+    echo "[arcs] .arcs/ present — run work through arcs: \`arcs status\` to orient, open an arc/goal BEFORE working, record input→workspace→output, and don't finish with .arcs/ empty. You run the CLI; the user doesn't."
+    ;;
+esac

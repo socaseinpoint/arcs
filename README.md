@@ -45,9 +45,13 @@ arcs/                        tooling + spec, lives outside your projects
   bin/arcs                   CLI: init · new-arc · new-goal · status
   install.sh                 PATH + Claude skill setup
   template/.arcs/            skeleton (arcs/ + goals/)
-  skill/SKILL.md             Claude skill
+  skill/SKILL.md             Claude skill (advises the agent)
+  hooks/arcs-hook            Claude hook (enforces the method, wired by install.sh)
   docs/DEPLOY.md             setup guide
   examples/basic/            a filled-in .arcs walkthrough
 ```
+
+Skill = advice, hook = enforcement: in an opted-in project the hook reminds the agent every
+session/prompt to open an arc before working, so it can't quietly skip the method.
 
 Landing (what & why, RU/EN): https://arcs-socaseinpoints-projects.vercel.app

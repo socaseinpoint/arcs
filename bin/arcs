@@ -127,11 +127,13 @@ cmd_update() {
   [ -d "$repo/.git" ] || die "not a git clone: $repo (re-clone from github.com/socaseinpoint/arcs)"
   echo "arcs: updating $repo"
   git -C "$repo" pull --ff-only || die "git pull failed in $repo"
-  if [ -d "$HOME/.claude/skills" ]; then
+  # re-run the installer so new tooling (skill, hooks) is wired in — idempotent.
+  if [ -x "$repo/install.sh" ]; then
+    bash "$repo/install.sh" >/dev/null 2>&1 && echo "arcs: tooling re-wired (PATH · skill · hook)"
+  elif [ -d "$HOME/.claude/skills" ]; then
     ln -sfn "$repo/skill" "$HOME/.claude/skills/arcs"
-    echo "arcs: skill linked ($HOME/.claude/skills/arcs)"
   fi
-  echo "arcs: up to date — restart your Claude Code session to reload the skill"
+  echo "arcs: up to date — restart your Claude Code session to reload skill + hook"
 }
 
 cmd_help() { sed -n '2,4p' "$0" | sed 's/^# \{0,1\}//'; cat <<EOF

@@ -38,13 +38,29 @@ arcs status                       # board: what's done, where the bottleneck is
 ```
 Then follow `SPEC.md`: input → workspace → output, outward only via output.
 
+## Enforcement hook (recommended)
+The skill *advises* the agent to use arcs. The hook *enforces* it: on every session start and prompt
+in an opted-in project (`.arcs/` present), it injects a reminder (and the live board at session start)
+so the agent can't quietly skip the method. Silent in projects without `.arcs/`.
+
+`install.sh` registers it automatically (in `~/.claude/settings.json`, with a `.bak` backup, idempotent).
+To add it by hand, merge this into `~/.claude/settings.json` (replace the path with your clone):
+```json
+{
+  "hooks": {
+    "SessionStart":     [{ "hooks": [{ "type": "command", "command": "<DIR>/hooks/arcs-hook" }] }],
+    "UserPromptSubmit": [{ "hooks": [{ "type": "command", "command": "<DIR>/hooks/arcs-hook" }] }]
+  }
+}
+```
+
 ## Updating
 One command, from anywhere — the CLI knows where it was cloned:
 ```bash
-arcs update          # git pull the method + relink the Claude skill
+arcs update          # git pull + re-wire PATH, skill, and hook (idempotent)
 ```
-Then restart your Claude Code session so it picks up the new skill. Your projects' `.arcs/` data
-is untouched.
+Then restart your Claude Code session so it picks up the new skill + hook. Your projects' `.arcs/`
+data is untouched.
 
 ## Requirements
 bash + standard coreutils (grep, sed). macOS / Linux. No build step.
