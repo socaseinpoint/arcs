@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # arcs — file-based work method CLI (arc + goal).
-# Subcommands: init · new-arc · new-goal · status · help
+# Subcommands: init · new-arc · new-goal · status · update · help
 # Work lives in a hidden meta dir: .arcs/{arcs,goals}/
 set -euo pipefail
 
@@ -134,7 +134,7 @@ cmd_update() {
   echo "arcs: up to date — restart your Claude Code session to reload the skill"
 }
 
-cmd_help() { sed -n '2,6p' "$0" | sed 's/^# \{0,1\}//'; cat <<EOF
+cmd_help() { sed -n '2,4p' "$0" | sed 's/^# \{0,1\}//'; cat <<EOF
 
   arcs init                         create .arcs/{arcs,goals} + project README
   arcs new-arc <slug>               new standalone arc in .arcs/arcs/
