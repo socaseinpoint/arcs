@@ -20,6 +20,12 @@ arcs new-arc spike-redis         # or a one-off standalone arc
 arcs status                      # see what's done and where you are
 ```
 
+Update later — one command, from anywhere:
+```bash
+arcs update                      # git pull the method + relink the Claude skill
+```
+(then restart your Claude Code session so it reloads the skill)
+
 Needs bash + grep/sed (macOS/Linux). No build step. Full guide: `docs/DEPLOY.md`. Method: `SPEC.md`.
 
 ## In 20 seconds

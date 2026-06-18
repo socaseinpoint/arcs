@@ -7,6 +7,15 @@ set -euo pipefail
 # --- helpers ---------------------------------------------------------------
 die() { echo "arcs: $*" >&2; exit 1; }
 
+repo_dir() {   # absolute path of the arcs repo (this script lives in <repo>/bin)
+  local src="${BASH_SOURCE[0]}" d
+  while [ -h "$src" ]; do
+    d="$(cd -P "$(dirname "$src")" && pwd)"; src="$(readlink "$src")"
+    [[ $src != /* ]] && src="$d/$src"
+  done
+  cd -P "$(dirname "$src")/.." && pwd
+}
+
 base_dir() {   # echo the meta base: .arcs if present, else create it
   [ -d .arcs ] || mkdir -p .arcs/arcs .arcs/goals
   echo ".arcs"
@@ -113,6 +122,18 @@ cmd_status() {
     for a in "$b"/arcs/*/arc.md; do [ -f "$a" ] && print_arc "$a" "  "; done; fi
 }
 
+cmd_update() {
+  local repo; repo="$(repo_dir)"
+  [ -d "$repo/.git" ] || die "not a git clone: $repo (re-clone from github.com/socaseinpoint/arcs)"
+  echo "arcs: updating $repo"
+  git -C "$repo" pull --ff-only || die "git pull failed in $repo"
+  if [ -d "$HOME/.claude/skills" ]; then
+    ln -sfn "$repo/skill" "$HOME/.claude/skills/arcs"
+    echo "arcs: skill linked ($HOME/.claude/skills/arcs)"
+  fi
+  echo "arcs: up to date — restart your Claude Code session to reload the skill"
+}
+
 cmd_help() { sed -n '2,6p' "$0" | sed 's/^# \{0,1\}//'; cat <<EOF
 
   arcs init                         create .arcs/{arcs,goals} + project README
@@ -120,6 +141,7 @@ cmd_help() { sed -n '2,6p' "$0" | sed 's/^# \{0,1\}//'; cat <<EOF
   arcs new-arc -g <goal> <slug>     new arc inside a goal
   arcs new-goal <slug>              new goal in .arcs/goals/
   arcs status                       print the board
+  arcs update                       git pull the method + relink the skill
 EOF
 }
 
@@ -130,6 +152,7 @@ case "$sub" in
   new-arc)   cmd_new_arc "$@" ;;
   new-goal)  cmd_new_goal "$@" ;;
   status)    cmd_status "$@" ;;
+  update)    cmd_update "$@" ;;
   help|-h|--help) cmd_help ;;
   *) die "unknown command '$sub' (try: arcs help)" ;;
 esac

@@ -38,6 +38,14 @@ arcs status                       # board: what's done, where the bottleneck is
 ```
 Then follow `SPEC.md`: input → workspace → output, outward only via output.
 
+## Updating
+One command, from anywhere — the CLI knows where it was cloned:
+```bash
+arcs update          # git pull the method + relink the Claude skill
+```
+Then restart your Claude Code session so it picks up the new skill. Your projects' `.arcs/` data
+is untouched.
+
 ## Requirements
 bash + standard coreutils (grep, sed). macOS / Linux. No build step.
 
