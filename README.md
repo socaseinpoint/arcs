@@ -25,7 +25,9 @@ Surface from work → open the current `*-goal.md` → see where you are. Don't 
 
 ## Start
 ```bash
-export PATH="$HOME/Documents/projects/arcs/bin:$PATH"   # once, in ~/.zshrc
+git clone https://github.com/socaseinpoint/arcs ~/arcs   # clone anywhere
+cd ~/arcs && ./install.sh                                # PATH + Claude skill
+
 cd my-project && arcs init
 arcs new-goal <slug>     # or: arcs new-arc <slug>
 arcs status

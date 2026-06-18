@@ -1,29 +1,36 @@
-# Deploy arcs for a new project
+# Set up arcs on your machine
 
-The tooling lives in this repo (`~/Documents/projects/arcs`). A project gets only `.arcs/`.
-The method never clutters the code: all bookkeeping sits in the hidden `.arcs/`, the CLI/skill stay outside.
+The tooling lives in this repo (clone it anywhere — `~/arcs`, `~/code/arcs`, whatever).
+A project only ever gets a hidden `.arcs/` dir. The method never clutters your code.
 
-## 1. Put the CLI on PATH (once)
-Add to `~/.zshrc`:
+## Quick install (one command)
 ```bash
-export PATH="$HOME/Documents/projects/arcs/bin:$PATH"
+git clone https://github.com/socaseinpoint/arcs ~/arcs
+cd ~/arcs && ./install.sh
 ```
-Restart the shell → `arcs` is available anywhere.
+`install.sh` adds `arcs` to your PATH (in `~/.zshrc` / `~/.bashrc`) and, if `~/.claude/skills`
+exists, symlinks the Claude skill. Open a new shell afterwards.
+
+## Manual install (if you prefer)
+Clone wherever you like, then point PATH at that clone's `bin/`:
+```bash
+git clone https://github.com/socaseinpoint/arcs <DIR>
+echo 'export PATH="<DIR>/bin:$PATH"' >> ~/.zshrc   # use your real <DIR>
+source ~/.zshrc
+# optional Claude skill:
+ln -s <DIR>/skill ~/.claude/skills/arcs
+```
 
 Check:
 ```bash
 arcs help
 ```
 
-## 2. Enable the method in a project
+## Use it in a project
 From the project root:
 ```bash
 cd my-project
-arcs init                 # creates .arcs/{arcs,goals} + a README pointer
-```
-
-## 3. Work
-```bash
+arcs init                         # creates .arcs/{arcs,goals} + a README pointer
 arcs new-goal payments            # multi-arc work → .arcs/goals/01-payments/
 arcs new-arc -g payments stripe   # an arc inside the goal
 arcs new-arc spike-redis          # a standalone arc → .arcs/arcs/NN-...
@@ -31,14 +38,9 @@ arcs status                       # board: what's done, where the bottleneck is
 ```
 Then follow `SPEC.md`: input → workspace → output, outward only via output.
 
-## 4. Claude skill (optional)
-The skill source is `skill/SKILL.md` in this repo. Install it globally via a symlink (not a copy,
-so edits in the repo are picked up immediately):
-```bash
-ln -s ~/Documents/projects/arcs/skill ~/.claude/skills/arcs
-```
-After that the agent knows the method and calls the CLI itself.
+## Requirements
+bash + standard coreutils (grep, sed). macOS / Linux. No build step.
 
 ## Project .gitignore
 `.arcs/` is usually **committed** (it's the memory of the work). If you don't want that, add `.arcs/`
-to `.gitignore`.
+to the project's `.gitignore`.

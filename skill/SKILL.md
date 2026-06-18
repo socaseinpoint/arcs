@@ -6,7 +6,8 @@ description: Use when structuring non-trivial work in a project that follows the
 # arcs — file-based work method (arc + goal)
 
 Work lives in a hidden meta dir `.arcs/` so it never clutters project code. Full spec:
-`~/Documents/projects/arcs/SPEC.md`. CLI: `~/Documents/projects/arcs/bin/arcs` (put on PATH as `arcs`).
+`SPEC.md` in the arcs repo (this skill is symlinked from `<arcs-repo>/skill`, so the spec is at
+`../SPEC.md` next to it). CLI: the `arcs` command (the repo's `install.sh` puts it on PATH).
 
 ## Two primitives
 - **arc** — atom of work. `input/` (what came in) → `workspace/` (work in progress) →
