@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ru" data-lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>arcs — a file-based method for running work</title>
+<meta name="description" content="arcs — a file-based work method. Two primitives: arc (input→workspace→output) and goal (an arc with a purpose holding nested arcs). State in files, not in an ephemeral chat. Tool-independent." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="style.css?v=1" />
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="index.html"><b>.</b>arcs</a>
+    <div class="nav-right">
+      <nav class="nav-links">
+        <a href="#essence"><span data-l="ru">суть</span><span data-l="en">essence</span></a>
+        <a href="#tooling"><span data-l="ru">туллинг</span><span data-l="en">tooling</span></a>
+        <a href="#examples"><span data-l="ru">примеры</span><span data-l="en">examples</span></a>
+      </nav>
+      <a href="https://github.com/socaseinpoint/arcs" target="_blank" rel="noopener">github ↗</a>
+      <div class="lang" role="group" aria-label="language">
+        <button data-set="ru" type="button">RU</button>
+        <button data-set="en" type="button">EN</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="wrap">
+      <span class="mono reveal">§ 00 — work method · file-based · tool-independent</span>
+      <h1 class="reveal">
+        <span data-l="ru">Работа живёт в <em>файлах</em>, не в чате.</span>
+        <span data-l="en">Work lives in <em>files</em>, not in chat.</span>
+      </h1>
+      <p class="lead reveal">
+        <span data-l="ru">Файловый метод ведения работы. Две примитивы — <b>arc</b> (input → workspace → output) и <b>goal</b> (arc с целью, держащий вложенные арки). Состояние в файлах, а не в эфемерной переписке. Агенты, чаты, IDE — деталь реализации, не часть метода. Всё лежит в скрытом <code>.arcs/</code> — код проекта не засоряется.</span>
+        <span data-l="en">A file-based method for running work. Two primitives — <b>arc</b> (input → workspace → output) and <b>goal</b> (an arc with a purpose holding nested arcs). State lives in files, not in an ephemeral chat. Agents, chats, IDEs are implementation details, not the method. Everything sits in a hidden <code>.arcs/</code> — it never clutters project code.</span>
+      </p>
+      <div class="actions reveal">
+        <a href="#essence" class="bracket bracket--primary"><span data-l="ru">[ суть метода → ]</span><span data-l="en">[ the method → ]</span></a>
+        <a href="https://github.com/socaseinpoint/arcs" target="_blank" rel="noopener" class="bracket">[ github ↗ ]</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ESSENCE -->
+  <section id="essence">
+    <div class="wrap block">
+      <div class="head reveal">
+        <div class="num">§ 01</div>
+        <div>
+          <h2><span data-l="ru">Суть. Две примитивы, состояние — это папка.</span><span data-l="en">The essence. Two primitives, state is a folder.</span></h2>
+          <div class="sub"><span data-l="ru">Чистая концепция, без инструментов. Метод не зависит от тулинга — CLI и скилл лишь обслуживают его.</span><span data-l="en">Pure concept, no tooling. The method doesn't depend on tools — the CLI and skill merely serve it.</span></div>
+        </div>
+      </div>
+
+      <div class="concepts reveal">
+        <div class="concept">
+          <span class="tag">arc</span>
+          <h3><span data-l="ru">атом работы</span><span data-l="en">the atom of work</span></h3>
+          <p><span data-l="ru">Один законченный кусок. Папка <code>NN-&lt;title&gt;/</code>: <code>input/</code> (что вошло в контекст) → <code>workspace/</code> (вся работа в процессе) → <code>output/</code> (самодостаточный результат — наружу читают <em>только</em> его). Плюс <code>arc.md</code> — паспорт: goal · status · указатели на output.</span><span data-l="en">One finished chunk. Folder <code>NN-&lt;title&gt;/</code>: <code>input/</code> (what entered the context) → <code>workspace/</code> (all work in progress) → <code>output/</code> (a self-contained result — the outside reads <em>only</em> this). Plus <code>arc.md</code> — a passport: goal · status · output pointers.</span></p>
+        </div>
+        <div class="concept">
+          <span class="tag">goal</span>
+          <h3><span data-l="ru">arc с целью</span><span data-l="en">an arc with a purpose</span></h3>
+          <p><span data-l="ru">Тот же скелет (<code>input/ workspace/ output/</code>) плюс собственный <code>arcs/</code> и версионируемый статус-док <code>NN-&lt;slug&gt;-goal.md</code>. Для проекта или глубокого ресёрча — многоарочной работы.</span><span data-l="en">The same skeleton (<code>input/ workspace/ output/</code>) plus its own <code>arcs/</code> and a versioned status doc <code>NN-&lt;slug&gt;-goal.md</code>. For a project or deep research — multi-arc work.</span></p>
+        </div>
+        <div class="concept">
+          <span class="tag">.arcs/</span>
+          <h3><span data-l="ru">мета-директория</span><span data-l="en">the meta directory</span></h3>
+          <p><span data-l="ru">Вся работа метода — в скрытом <code>.arcs/</code> в корне проекта, чтобы не засорять код. <code>arcs/</code> — отдельные арки, <code>goals/</code> — многоарочные цели. Тулинг остаётся снаружи; проект получает только <code>.arcs/</code>.</span><span data-l="en">All method work lives in a hidden <code>.arcs/</code> at the project root, so it never clutters the code. <code>arcs/</code> — standalone arcs, <code>goals/</code> — multi-arc goals. Tooling stays outside; a project gets only <code>.arcs/</code>.</span></p>
+        </div>
+      </div>
+
+      <div class="body-grid reveal" style="margin-top:2.4rem;">
+        <div></div>
+        <div>
+          <p class="prose"><span data-l="ru"><b>Инкапсуляция — жёсткое правило.</b> Всё, что нужно следующему шагу, должно быть <em>выводимо из <code>output/</code> в одиночку</em>. <code>workspace/</code> приватный, наружу не течёт. <code>input/</code> — то, что пришло. Закрыл арку → <code>output/</code> стоит сам по себе. Это OOP-аналогия: input = аргументы конструктора, workspace = приватное состояние, output = публичный интерфейс.</span><span data-l="en"><b>Encapsulation is a hard rule.</b> Anything the next step needs must be <em>derivable from <code>output/</code> alone</em>. <code>workspace/</code> is private and never leaks out. <code>input/</code> is what came in. Close an arc → its <code>output/</code> stands on its own. The OOP analogy: input = constructor args, workspace = private state, output = public interface.</span></p>
+          <p class="prose dim"><span data-l="ru"><b>Версионирование цели — номером, не правкой.</b> Файлы <code>01-&lt;slug&gt;-goal.md</code>, <code>02-…</code>, <code>03-…</code>. Высший номер = текущий = авторитетный; старые — история, их не трогают. Обновить цель = положить рядом новую версию. Версия фиксирует разворот.</span><span data-l="en"><b>Versioning a goal — by number, not by edit.</b> Files <code>01-&lt;slug&gt;-goal.md</code>, <code>02-…</code>, <code>03-…</code>. The highest number = current = authoritative; old ones are history, never touched. Update a goal = drop a new version beside it. A version captures a pivot.</span></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHY IT WORKS -->
+  <section>
+    <div class="wrap block">
+      <div class="head reveal">
+        <div class="num">§ 02</div>
+        <div>
+          <h2><span data-l="ru">Почему так работает.</span><span data-l="en">Why it works.</span></h2>
+          <div class="sub"><span data-l="ru">Три свойства, ради которых метод существует.</span><span data-l="en">Three properties the method exists for.</span></div>
+        </div>
+      </div>
+      <div class="why reveal">
+        <div class="reason">
+          <span class="rk">// <span data-l="ru">не теряешься</span><span data-l="en">don't get lost</span></span>
+          <p><span data-l="ru">Вынырнул из глубокой арки → открыл текущий <code>NN-&lt;slug&gt;-goal.md</code> → видишь всю картину: где ты, какие арки открыты, в чём боттлнек.</span><span data-l="en">Surface from a deep arc → open the current <code>NN-&lt;slug&gt;-goal.md</code> → see the whole picture: where you are, which arcs are open, where the bottleneck is.</span></p>
+        </div>
+        <div class="reason">
+          <span class="rk">// <span data-l="ru">чистый хэндофф</span><span data-l="en">clean handoff</span></span>
+          <p><span data-l="ru"><code>output/</code> самодостаточен → другой агент или сессия продолжает без контекста чата. Контракт между шагами — это папка, а не память переписки.</span><span data-l="en"><code>output/</code> is self-contained → another agent or session continues without chat context. The contract between steps is a folder, not the memory of a conversation.</span></p>
+        </div>
+        <div class="reason">
+          <span class="rk">// <span data-l="ru">автоматизируемо</span><span data-l="en">automatable</span></span>
+          <p><span data-l="ru">Скрипт сканит <code>arc.md</code>/<code>goal.md</code> → статусы, открытые пункты, указатели. Это и есть <code>arcs status</code> — доска без отдельной базы.</span><span data-l="en">A script scans <code>arc.md</code>/<code>goal.md</code> → statuses, open items, pointers. That's exactly <code>arcs status</code> — a board with no separate database.</span></p>
+        </div>
+      </div>
+
+      <div class="body-grid reveal" style="margin-top:2.4rem;">
+        <div></div>
+        <div>
+          <p class="prose dim"><span data-l="ru"><b style="color:var(--ink)">Инварианты.</b> <code>output/</code> не содержит факта, не обоснованного из <code>input/</code> или процесса. <code>workspace/</code> одноразовый — любой артефакт перегенерируем, финал в <code>output/</code> не правят руками вне процесса. <code>arc.md</code> / <code>NN-slug-goal.md</code> — единственный источник статуса. Нумерация внутри одного <code>arcs/</code> сплошная.</span><span data-l="en"><b style="color:var(--ink)">Invariants.</b> <code>output/</code> holds no fact ungrounded in <code>input/</code> or the process. <code>workspace/</code> is disposable — any artifact is re-generable, the final in <code>output/</code> is never hand-tweaked outside the process. <code>arc.md</code> / <code>NN-slug-goal.md</code> is the single source of status. Numbering is contiguous within one <code>arcs/</code>.</span></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TOOLING -->
+  <section id="tooling">
+    <div class="wrap block">
+      <div class="head reveal">
+        <div class="num">§ 03</div>
+        <div>
+          <h2><span data-l="ru">Туллинг. Практический слой, отдельно от метода.</span><span data-l="en">Tooling. The practical layer, kept separate.</span></h2>
+          <div class="sub"><span data-l="ru">Метод живёт без инструментов. Но рядом есть CLI и скилл, чтобы не делать рутину руками.</span><span data-l="en">The method lives without tools. But a CLI and a skill sit alongside, so you don't do the chores by hand.</span></div>
+        </div>
+      </div>
+
+      <div class="body-grid reveal">
+        <div></div>
+        <div>
+          <p class="prose"><span data-l="ru"><b>CLI <code>arcs</code></b> — заводит скелет и читает доску. Папки и паспорта создаются за тебя, нумерация считается сама.</span><span data-l="en"><b>The <code>arcs</code> CLI</b> — scaffolds the skeleton and reads the board. Folders and passports are created for you, numbering is computed automatically.</span></p>
+<pre><span class="k">arcs init</span>                      <span class="c"># .arcs/{arcs,goals} + a README pointer</span>
+<span class="k">arcs new-arc</span> &lt;slug&gt;            <span class="c"># standalone arc in .arcs/arcs/</span>
+<span class="k">arcs new-arc</span> -g &lt;goal&gt; &lt;slug&gt;   <span class="c"># an arc inside a goal</span>
+<span class="k">arcs new-goal</span> &lt;slug&gt;           <span class="c"># a goal in .arcs/goals/</span>
+<span class="k">arcs status</span>                    <span class="c"># the board: what's done, where the bottleneck is</span></pre>
+        </div>
+      </div>
+
+      <div class="body-grid reveal" style="margin-top:2.4rem;">
+        <div></div>
+        <div>
+          <p class="prose"><span data-l="ru"><b>Деплой для нового проекта</b> — два шага: положить CLI на <code>PATH</code> (один раз), затем <code>arcs init</code> из корня проекта.</span><span data-l="en"><b>Deploy for a new project</b> — two steps: put the CLI on <code>PATH</code> (once), then run <code>arcs init</code> from the project root.</span></p>
+<pre><span class="c"># 1 · put the CLI on PATH (once, in ~/.zshrc)</span>
+export PATH="$HOME/Documents/projects/arcs/bin:$PATH"
+
+<span class="c"># 2 · enable the method in a project</span>
+cd my-project &amp;&amp; <span class="k">arcs init</span>
+<span class="k">arcs new-goal</span> payments
+<span class="k">arcs new-arc</span> -g payments stripe
+<span class="k">arcs status</span></pre>
+        </div>
+      </div>
+
+      <div class="body-grid reveal" style="margin-top:2.4rem;">
+        <div></div>
+        <div>
+          <p class="prose"><span data-l="ru"><b>Claude-скилл (опционально)</b> — символическая ссылка на <code>skill/</code> в <code>~/.claude/skills/</code> (ссылка, не копия — правки в репо подхватываются сразу). После этого агент знает метод и сам зовёт CLI.</span><span data-l="en"><b>The Claude skill (optional)</b> — a symlink from <code>skill/</code> into <code>~/.claude/skills/</code> (a link, not a copy — edits in the repo are picked up immediately). After that the agent knows the method and calls the CLI itself.</span></p>
+<pre>ln -s ~/Documents/projects/arcs/skill ~/.claude/skills/arcs</pre>
+          <p class="prose dim"><span data-l="ru"><code>.arcs/</code> обычно <b>коммитят</b> — это память работы. Не хочешь — добавь <code>.arcs/</code> в <code>.gitignore</code>.</span><span data-l="en"><code>.arcs/</code> is usually <b>committed</b> — it's the memory of the work. If you'd rather not, add <code>.arcs/</code> to <code>.gitignore</code>.</span></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EXAMPLES -->
+  <section id="examples">
+    <div class="wrap block">
+      <div class="head reveal">
+        <div class="num">§ 04</div>
+        <div>
+          <h2><span data-l="ru">Примеры. Как выглядит настоящий <code>.arcs/</code>.</span><span data-l="en">Examples. What a real <code>.arcs/</code> looks like.</span></h2>
+          <div class="sub"><span data-l="ru">Маленький проект: одна цель (рассылка, многоарочная) и одна отдельная арка (one-shot спайк).</span><span data-l="en">A tiny project: one goal (a newsletter, multi-arc) and one standalone arc (a one-shot spike).</span></div>
+        </div>
+      </div>
+
+      <div class="body-grid reveal">
+        <div></div>
+        <div>
+          <figure>
+            <div class="figcap"><span>fig.01 — examples/basic/.arcs/</span><span><span data-l="ru">дерево</span><span data-l="en">tree</span></span></div>
+<pre>basic/.arcs/
+  arcs/
+    01-spike-vite/                  <span class="c"># standalone arc — one question, answered</span>
+      arc.md
+      output/verdict.md             <span class="a">← the public interface (self-contained)</span>
+  goals/
+    01-newsletter/                  <span class="c"># a goal = an arc with a purpose + its own arcs</span>
+      01-newsletter-goal.md         <span class="c"># brief status: where we are, which arcs are open</span>
+      arcs/
+        01-research/
+          arc.md
+          input/sources.md          <span class="c"># what came in</span>
+          output/shortlist.md       <span class="a">← what the next arc reads (and ONLY this)</span></pre>
+          </figure>
+        </div>
+      </div>
+
+      <div class="body-grid reveal" style="margin-top:2.4rem;">
+        <div></div>
+        <div>
+          <figure>
+            <div class="figcap"><span>fig.02 — $ arcs status</span><span><span data-l="ru">доска</span><span data-l="en">the board</span></span></div>
+<pre>GOALS
+  01-newsletter                    <span class="a">[active]</span>  ship issue #1 of a weekly dev newsletter
+      01-research                        <span class="a">[done]</span>    gather candidate stories for issue #1
+
+ARCS
+  01-spike-vite                      <span class="a">[done]</span>    check whether Vite 6 breaks our PostCSS setup</pre>
+          </figure>
+        </div>
+      </div>
+
+      <div class="body-grid reveal" style="margin-top:2.4rem;">
+        <div></div>
+        <div>
+          <div class="notes">
+            <div class="note">
+              <span class="nk">output/ <span data-l="ru">— это контракт</span><span data-l="en">is the contract</span></span>
+              <p><span data-l="ru">Арка-черновик читает <code>01-research/output/shortlist.md</code> и ничего из его <code>workspace/</code>. Закрыл арку → её output стоит сам по себе.</span><span data-l="en">The drafting arc reads <code>01-research/output/shortlist.md</code> and nothing from its <code>workspace/</code>. Close an arc → its output stands on its own.</span></p>
+            </div>
+            <div class="note">
+              <span class="nk">standalone <span data-l="ru">vs</span><span data-l="en">vs</span> goal</span>
+              <p><span data-l="ru"><code>01-spike-vite</code> — выкидной вопрос, который стоит сохранить → корневая арка. Рассылка — устойчивая многошаговая работа → goal со своими арками.</span><span data-l="en"><code>01-spike-vite</code> is a throwaway question worth persisting → a root arc. The newsletter is sustained, multi-step → a goal with its own arcs.</span></p>
+            </div>
+            <div class="note">
+              <span class="nk">goal.md <span data-l="ru">— «ты здесь»</span><span data-l="en">— "you are here"</span></span>
+              <p><span data-l="ru">Вынырнув из глубокого дайва, открываешь <code>01-newsletter-goal.md</code> и сразу видишь боттлнек и что дальше.</span><span data-l="en">Surfacing from a deep dive, you open <code>01-newsletter-goal.md</code> and immediately see the bottleneck and what's next.</span></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CLOSER -->
+  <section>
+    <div class="wrap closer reveal">
+      <h2><span data-l="ru">Вынырни из работы → открой текущий <em>goal.md</em> → увидь, где ты. Не потеряйся.</span><span data-l="en">Surface from work → open the current <em>goal.md</em> → see where you are. Don't get lost.</span></h2>
+      <p><span data-l="ru">Метод независим от тулинга. CLI и скилл — снаружи, проект получает только <code>.arcs/</code>. Открытый код.</span><span data-l="en">The method is tool-independent. CLI and skill live outside; a project gets only <code>.arcs/</code>. Open source.</span></p>
+      <div class="actions">
+        <a href="https://github.com/socaseinpoint/arcs" target="_blank" rel="noopener" class="bracket bracket--primary">[ github ↗ ]</a>
+        <a href="#essence" class="bracket"><span data-l="ru">[ наверх ↑ ]</span><span data-l="en">[ back to top ↑ ]</span></a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <span class="mono">arcs · <span data-l="ru">файловый метод ведения работы</span><span data-l="en">a file-based method for running work</span></span>
+    <a href="https://github.com/socaseinpoint/arcs" target="_blank" rel="noopener" class="mono">github ↗</a>
+  </div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
