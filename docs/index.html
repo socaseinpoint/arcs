@@ -131,43 +131,80 @@
         <div class="num">§ 03</div>
         <div>
           <h2><span data-l="ru">Туллинг. Практический слой, отдельно от метода.</span><span data-l="en">Tooling. The practical layer, kept separate.</span></h2>
-          <div class="sub"><span data-l="ru">Метод живёт без инструментов. Но рядом есть CLI и скилл, чтобы не делать рутину руками.</span><span data-l="en">The method lives without tools. But a CLI and a skill sit alongside, so you don't do the chores by hand.</span></div>
+          <div class="sub"><span data-l="ru">Метод живёт без инструментов. Но рядом есть CLI, скилл и хуки, чтобы не делать рутину руками — и чтобы агент не забывал про метод.</span><span data-l="en">The method lives without tools. But a CLI, a skill, and hooks sit alongside — so you don't do the chores by hand, and the agent doesn't forget the method.</span></div>
         </div>
       </div>
 
       <div class="body-grid reveal">
         <div></div>
         <div>
-          <p class="prose"><span data-l="ru"><b>CLI <code>arcs</code></b> — заводит скелет и читает доску. Папки и паспорта создаются за тебя, нумерация считается сама.</span><span data-l="en"><b>The <code>arcs</code> CLI</b> — scaffolds the skeleton and reads the board. Folders and passports are created for you, numbering is computed automatically.</span></p>
-<pre><span class="k">arcs init</span>                      <span class="c"># .arcs/{arcs,goals} + a README pointer</span>
-<span class="k">arcs new-arc</span> &lt;slug&gt;            <span class="c"># standalone arc in .arcs/arcs/</span>
-<span class="k">arcs new-arc</span> -g &lt;goal&gt; &lt;slug&gt;   <span class="c"># an arc inside a goal</span>
-<span class="k">arcs new-goal</span> &lt;slug&gt;           <span class="c"># a goal in .arcs/goals/</span>
-<span class="k">arcs status</span>                    <span class="c"># the board: what's done, where the bottleneck is</span></pre>
-        </div>
-      </div>
+          <p class="prose"><span data-l="ru"><b>Установка — клон + один инсталлер.</b> <code>install.sh</code> кладёт <code>arcs</code> на <code>PATH</code>, линкует Claude-скилл и прописывает хуки. Метод-репо живёт где угодно (<code>~/arcs</code>); проект получает только <code>.arcs/</code>.</span><span data-l="en"><b>Install — clone plus one installer.</b> <code>install.sh</code> puts <code>arcs</code> on <code>PATH</code>, links the Claude skill, and wires the hooks. The method repo lives anywhere (<code>~/arcs</code>); a project gets only <code>.arcs/</code>.</span></p>
+<pre><span class="c"># 1 · install (clone anywhere, then run the installer)</span>
+git clone https://github.com/socaseinpoint/arcs ~/arcs
+cd ~/arcs &amp;&amp; ./install.sh        <span class="c"># PATH + Claude skill + hooks</span>
+exec $SHELL                      <span class="c"># reload shell so `arcs` is found</span>
 
-      <div class="body-grid reveal" style="margin-top:2.4rem;">
-        <div></div>
-        <div>
-          <p class="prose"><span data-l="ru"><b>Деплой для нового проекта</b> — два шага: положить CLI на <code>PATH</code> (один раз), затем <code>arcs init</code> из корня проекта.</span><span data-l="en"><b>Deploy for a new project</b> — two steps: put the CLI on <code>PATH</code> (once), then run <code>arcs init</code> from the project root.</span></p>
-<pre><span class="c"># 1 · put the CLI on PATH (once, in ~/.zshrc)</span>
-export PATH="$HOME/Documents/projects/arcs/bin:$PATH"
-
-<span class="c"># 2 · enable the method in a project</span>
-cd my-project &amp;&amp; <span class="k">arcs init</span>
+<span class="c"># 2 · use it in a project</span>
+cd my-project &amp;&amp; <span class="k">arcs init</span>      <span class="c"># creates .arcs/ + asks the arc language</span>
 <span class="k">arcs new-goal</span> payments
 <span class="k">arcs new-arc</span> -g payments stripe
 <span class="k">arcs status</span></pre>
+          <p class="prose dim"><span data-l="ru"><b>Апдейт — одна команда из любого места.</b> CLI знает, куда клонировался: <code>arcs update</code> делает <code>git pull</code> метода и пере-проводит скилл и хуки (идемпотентно). Потом перезапусти сессию Claude Code.</span><span data-l="en"><b>Update — one command, from anywhere.</b> The CLI knows where it was cloned: <code>arcs update</code> does a <code>git pull</code> of the method and re-wires the skill and hooks (idempotent). Then restart your Claude Code session.</span></p>
+<pre><span class="k">arcs update</span>                    <span class="c"># git pull + re-wire PATH · skill · hooks</span></pre>
         </div>
       </div>
 
       <div class="body-grid reveal" style="margin-top:2.4rem;">
         <div></div>
         <div>
-          <p class="prose"><span data-l="ru"><b>Claude-скилл (опционально)</b> — символическая ссылка на <code>skill/</code> в <code>~/.claude/skills/</code> (ссылка, не копия — правки в репо подхватываются сразу). После этого агент знает метод и сам зовёт CLI.</span><span data-l="en"><b>The Claude skill (optional)</b> — a symlink from <code>skill/</code> into <code>~/.claude/skills/</code> (a link, not a copy — edits in the repo are picked up immediately). After that the agent knows the method and calls the CLI itself.</span></p>
-<pre>ln -s ~/Documents/projects/arcs/skill ~/.claude/skills/arcs</pre>
-          <p class="prose dim"><span data-l="ru"><code>.arcs/</code> обычно <b>коммитят</b> — это память работы. Не хочешь — добавь <code>.arcs/</code> в <code>.gitignore</code>.</span><span data-l="en"><code>.arcs/</code> is usually <b>committed</b> — it's the memory of the work. If you'd rather not, add <code>.arcs/</code> to <code>.gitignore</code>.</span></p>
+          <p class="prose"><span data-l="ru"><b>CLI <code>arcs</code>.</b> Заводит скелет, считает нумерацию, читает доску. Команды совпадают с <code>bin/arcs</code>.</span><span data-l="en"><b>The <code>arcs</code> CLI.</b> Scaffolds the skeleton, computes numbering, reads the board. The commands match <code>bin/arcs</code>.</span></p>
+<pre><span class="k">arcs init</span> [en|ru|es]            <span class="c"># create .arcs/ + pick the arc language (asks if a TTY)</span>
+<span class="k">arcs lang</span> [en|ru|es]            <span class="c"># show or change this project's arc language</span>
+<span class="k">arcs new-arc</span> &lt;slug&gt;            <span class="c"># standalone arc in .arcs/arcs/</span>
+<span class="k">arcs new-arc</span> -g &lt;goal&gt; &lt;slug&gt;   <span class="c"># an arc inside a goal</span>
+<span class="k">arcs new-goal</span> &lt;slug&gt;           <span class="c"># a goal in .arcs/goals/</span>
+<span class="k">arcs status</span>                    <span class="c"># the board: what's done, the bottleneck, the language</span>
+<span class="k">arcs update</span>                    <span class="c"># git pull the method + re-wire skill/hooks</span></pre>
+        </div>
+      </div>
+
+      <div class="body-grid reveal" style="margin-top:2.4rem;">
+        <div></div>
+        <div>
+          <p class="prose"><span data-l="ru"><b>Язык — на проект.</b> На <code>arcs init</code> ты выбираешь, на каком языке пишутся арки — <code>en</code>, <code>ru</code> или <code>es</code>; выбор лежит в <code>.arcs/config</code> и меняется в любой момент: <code>arcs lang &lt;code&gt;</code>. Шаблоны и текст, который генерят prose-агенты, следуют ему. Ключи полей (<code>goal:</code>, <code>status:</code>) остаются английскими — чтобы тулинг был языко-независим.</span><span data-l="en"><b>Language — per project.</b> At <code>arcs init</code> you pick the language arcs are written in — <code>en</code>, <code>ru</code>, or <code>es</code>; the choice lives in <code>.arcs/config</code> and changes anytime: <code>arcs lang &lt;code&gt;</code>. Templates and the prose the agents produce follow it. Field keys (<code>goal:</code>, <code>status:</code>) stay English — so the tooling is language-agnostic.</span></p>
+          <p class="prose dim"><span data-l="ru">Агент (Claude, через скилл) держит содержимое арок на выбранном языке. Так можно вести весь проект в <code>ru</code> или <code>es</code>, не зная английского.</span><span data-l="en">The agent (Claude, via the skill) keeps arc content in the chosen language. So you can run a whole project's arcs in <code>ru</code> or <code>es</code> without knowing English.</span></p>
+<pre>cd my-project &amp;&amp; <span class="k">arcs init</span> ru    <span class="c"># arcs in this project are written in Russian</span>
+<span class="k">arcs lang</span> es                  <span class="c"># switch to Spanish later (existing files unchanged)</span></pre>
+        </div>
+      </div>
+
+      <div class="head reveal" style="margin-top:3rem;">
+        <div class="num">§ 03.1</div>
+        <div>
+          <h3 class="subhead"><span data-l="ru">Три слоя принуждения</span><span data-l="en">Three enforcement layers</span></h3>
+          <div class="sub"><span data-l="ru">От слабого к сильному. Всё проводит <code>install.sh</code>. Проект без <code>.arcs/</code> не задет — <code>arcs init</code> и есть опт-ин.</span><span data-l="en">Weakest to strongest. All wired by <code>install.sh</code>. A project without <code>.arcs/</code> is never touched — <code>arcs init</code> is the opt-in.</span></div>
+        </div>
+      </div>
+
+      <div class="why reveal">
+        <div class="reason">
+          <span class="rk">// skill</span>
+          <p><span data-l="ru"><b>Советует.</b> Скилл подсказывает агенту использовать arcs — открыть арку и работать внутри неё (input → workspace → output), а не просто заметить папку.</span><span data-l="en"><b>Advises.</b> The skill nudges the agent to use arcs — to open an arc and work inside it (input → workspace → output), not merely notice the dir.</span></p>
+        </div>
+        <div class="reason">
+          <span class="rk">// arcs-hook</span>
+          <p><span data-l="ru"><b>Напоминает.</b> Хук на <code>SessionStart</code> и <code>UserPromptSubmit</code> инжектит напоминание и живую доску в проектах, которые опт-инулись — чтобы агент тихо не забыл.</span><span data-l="en"><b>Reminds.</b> A hook on <code>SessionStart</code> and <code>UserPromptSubmit</code> injects a reminder plus the live board in opted-in projects — so the agent can't quietly forget.</span></p>
+        </div>
+        <div class="reason">
+          <span class="rk">// arcs-gate</span>
+          <p><span data-l="ru"><b>Блокирует.</b> Хук на <code>PreToolUse</code> жёстко запрещает правки файлов проекта, пока не открыта арка. Правки внутри <code>.arcs/</code> всегда разрешены; проекты без <code>.arcs/</code> не затронуты.</span><span data-l="en"><b>Hard-blocks.</b> A <code>PreToolUse</code> hook refuses edits to project files until an arc is open. Edits inside <code>.arcs/</code> are always allowed; projects without <code>.arcs/</code> are never affected.</span></p>
+        </div>
+      </div>
+
+      <div class="body-grid reveal" style="margin-top:2.4rem;">
+        <div></div>
+        <div>
+          <p class="prose dim"><span data-l="ru"><code>.arcs/</code> обычно <b>коммитят</b> — это память работы. Не хочешь — добавь <code>.arcs/</code> в <code>.gitignore</code>. Нужны только bash + grep/sed (macOS/Linux), без шага сборки.</span><span data-l="en"><code>.arcs/</code> is usually <b>committed</b> — it's the memory of the work. If you'd rather not, add <code>.arcs/</code> to <code>.gitignore</code>. Needs only bash + grep/sed (macOS/Linux), no build step.</span></p>
         </div>
       </div>
     </div>

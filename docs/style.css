@@ -115,7 +115,9 @@ section { border-bottom: 1px solid var(--line); }
 .head .num { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.14em; color: var(--ink-faint); padding-top: 0.6rem; }
 .head h2 { font-size: var(--text-h2); line-height: 1.02; letter-spacing: -0.02em; font-weight: 500; margin: 0; max-width: 26ch; }
 .head h2 code { font-size: 0.82em; color: var(--accent); }
+.head h3.subhead { font-size: clamp(1.4rem, 1rem + 1.4vw, 2rem); line-height: 1.04; letter-spacing: -0.02em; font-weight: 500; margin: 0; max-width: 28ch; }
 .head .sub { margin: 1.2rem 0 0; color: var(--ink-dim); max-width: 56ch; font-size: var(--text-lead); line-height: 1.4; }
+.head .sub code { color: var(--accent); }
 @media (max-width: 640px) { .head { grid-template-columns: 1fr; } .head .num { padding-top: 0; } }
 
 .body-grid { display: grid; grid-template-columns: 7rem 1fr; gap: clamp(1rem, 3vw, 3rem); }
