@@ -1,0 +1,135 @@
+#!/usr/bin/env bash
+# arcs — file-based work method CLI (arc + goal).
+# Subcommands: init · new-arc · new-goal · status · help
+# Work lives in a hidden meta dir: .arcs/{arcs,goals}/
+set -euo pipefail
+
+# --- helpers ---------------------------------------------------------------
+die() { echo "arcs: $*" >&2; exit 1; }
+
+base_dir() {   # echo the meta base: .arcs if present, else create it
+  [ -d .arcs ] || mkdir -p .arcs/arcs .arcs/goals
+  echo ".arcs"
+}
+
+next_num() {   # next zero-padded NN in a dir of NN-<slug>/ entries
+  local dir="$1" max=0 n
+  if [ -d "$dir" ]; then
+    for d in "$dir"/[0-9][0-9]-*/; do
+      [ -d "$d" ] || continue
+      n=$(basename "$d"); n=${n%%-*}; n=$((10#$n))
+      [ "$n" -gt "$max" ] && max=$n
+    done
+  fi
+  printf "%02d" $((max + 1))
+}
+
+arc_md() {     # $1=path $2=slug
+  cat > "$1/arc.md" <<EOF
+# $2
+
+goal: <одна строка — что закрываем>
+status: active
+
+## input
+<что зашло>
+
+## output → пойнтеры
+- <output/... — что наружу>
+EOF
+}
+
+goal_md() {    # $1=path $2=NN $3=slug
+  cat > "$1/$2-$3-goal.md" <<EOF
+# $2-$3-goal — <цель>
+
+goal: <цель — одна строка>
+status: active
+version: $2 (высший номер = текущий)
+
+## Где мы сейчас
+<узкое горло>
+
+## Арки цели
+<NN-arc → output → статус>
+EOF
+}
+
+# --- commands --------------------------------------------------------------
+cmd_init() {
+  local b; b=$(base_dir)
+  [ -f README.md ] || cat > README.md <<EOF
+# $(basename "$PWD")
+
+Follows the **arcs** method. Work lives in \`.arcs/\` (meta).
+- \`.arcs/arcs/\`  — standalone арки
+- \`.arcs/goals/\` — многоарочные цели
+Status: \`arcs status\`
+EOF
+  echo "arcs: initialized $b/ (arcs, goals)"
+}
+
+cmd_new_arc() {
+  local goal_slug="" slug b dir nn
+  if [ "${1:-}" = "-g" ]; then goal_slug="$2"; shift 2; fi
+  slug="${1:-}"; [ -n "$slug" ] || die "usage: arcs new-arc [-g <goal-slug>] <slug>"
+  b=$(base_dir)
+  if [ -n "$goal_slug" ]; then
+    local gdir; gdir=$(ls -d "$b"/goals/[0-9][0-9]-"$goal_slug"/ 2>/dev/null | head -1) || true
+    [ -n "$gdir" ] || die "goal '$goal_slug' not found in $b/goals/"
+    dir="${gdir%/}/arcs"
+  else
+    dir="$b/arcs"
+  fi
+  nn=$(next_num "$dir")
+  mkdir -p "$dir/$nn-$slug"/{input,workspace,output}
+  arc_md "$dir/$nn-$slug" "$nn-$slug"
+  echo "arcs: created $dir/$nn-$slug (input/workspace/output + arc.md)"
+}
+
+cmd_new_goal() {
+  local slug="${1:-}" b nn dir
+  [ -n "$slug" ] || die "usage: arcs new-goal <slug>"
+  b=$(base_dir)
+  nn=$(next_num "$b/goals")
+  dir="$b/goals/$nn-$slug"
+  mkdir -p "$dir"/{input,workspace,output,arcs}
+  goal_md "$dir" "$nn" "$slug"
+  echo "arcs: created $dir (input/workspace/output/arcs + $nn-$slug-goal.md)"
+}
+
+cmd_status() {
+  local b="."; [ -d .arcs ] && b=".arcs"
+  field() { grep -m1 -E "^$2:" "$1" 2>/dev/null | sed -E "s/^$2:[[:space:]]*//" || true; }
+  print_arc() { local md="$1" ind="$2" n; n=$(dirname "$md" | xargs basename)
+    printf "%s%-34s %-9s %s\n" "$ind" "$n" "[$(field "$md" status)]" "$(field "$md" goal)"; }
+  if [ -d "$b/goals" ]; then echo "GOALS"
+    for g in "$b"/goals/*/; do [ -d "$g" ] || continue
+      local cur; cur=$(ls "$g"/*-goal.md 2>/dev/null | sort | tail -1 || true)
+      [ -n "$cur" ] && printf "  %-32s %-9s %s\n" "$(basename "$g")" "[$(field "$cur" status)]" "$(field "$cur" goal)"
+      for a in "$g"arcs/*/arc.md; do [ -f "$a" ] && print_arc "$a" "      "; done
+    done; echo; fi
+  if [ -d "$b/arcs" ]; then echo "ARCS"
+    for a in "$b"/arcs/*/arc.md; do [ -f "$a" ] && print_arc "$a" "  "; done; fi
+}
+
+cmd_help() { sed -n '2,6p' "$0" | sed 's/^# \{0,1\}//'; cat <<EOF
+
+  arcs init                         create .arcs/{arcs,goals} + project README
+  arcs new-arc <slug>               new standalone arc in .arcs/arcs/
+  arcs new-arc -g <goal> <slug>     new arc inside a goal
+  arcs new-goal <slug>              new goal in .arcs/goals/
+  arcs status                       print the board
+EOF
+}
+
+# --- dispatch --------------------------------------------------------------
+sub="${1:-help}"; shift || true
+case "$sub" in
+  init)      cmd_init "$@" ;;
+  new-arc)   cmd_new_arc "$@" ;;
+  new-goal)  cmd_new_goal "$@" ;;
+  status)    cmd_status "$@" ;;
+  help|-h|--help) cmd_help ;;
+  *) die "unknown command '$sub' (try: arcs help)" ;;
+esac
