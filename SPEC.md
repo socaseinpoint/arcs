@@ -49,6 +49,10 @@ Everything else (how, flow, notes, iterations) → `workspace/`.
 open arc → fix input → work in workspace → close → self-contained output
   → update arc.md → (if inside a goal) pull a pointer into the goal → next
 ```
+**Closing marks done two ways at once:** rename the folder `NN-<slug>` → `__NN-<slug>__`
+(two underscores each side) **and** set `status: done` in `arc.md`. The `__…__` name makes
+done-state visible in `ls`; `arc.md status: done` stays the machine source of truth — both agree.
+Reopening undoes both: `__NN-<slug>__` → `NN-<slug>`, `status:` back to active.
 
 ### Two homes for arcs
 - **`.arcs/arcs/`** — standalone arcs. Need an answer but don't want it lost in the ephemeral chat →
@@ -82,11 +86,39 @@ The current `NN-<slug>-goal.md` always answers briefly: the goal, which arcs are
 
 ---
 
+## Rules — optional behavior layer
+The base method (arc · goal · encapsulation · versioning) is tooling-independent and complete on its
+own. **Rules** are an opt-in layer on top: per-project behaviors an agent follows while working. They
+change nothing about the method's essence — turn them all off and the method runs exactly as above.
+
+Rules live as markdown in `.arcs/rules/<slug>.md`:
+```markdown
+# <slug>
+enabled: true | false
+
+<body — the behavior an agent must follow when this rule is enabled>
+```
+Toggled per project; enabling/disabling just flips the `enabled:` line:
+```
+arcs rule list            show rules + enabled state
+arcs rule on <slug>       enabled: true
+arcs rule off <slug>      enabled: false
+arcs rule add <slug>      scaffold a new rule (enabled: false)
+```
+
+**Built-in rule `subagents`** ships enabled at `arcs init`. It is the agentic execution of the method:
+an arc is already encapsulated (`input → workspace → output`, the outside reads only `output/`), so the
+**arc boundary IS a subagent boundary**. With the rule on, an agent dispatches one subagent per arc —
+independent arcs as parallel subagents, dependent arcs pipelined — while the orchestrator reads back
+only each arc's `output/`. The method still works with it off: run the arcs inline, same files, same
+encapsulation.
+
 ## Invariants
 - `output/` contains no fact/claim not grounded in `input/` or the process.
 - `workspace/` is disposable: any artifact is re-generable; never hand-tweak the final in `output/` outside the process.
 - `arc.md` / `NN-slug-goal.md` is the single source of status.
-- Numbering is contiguous within one `arcs/`.
+- Numbering is contiguous within one `arcs/` and counts **both** open `NN-*` and closed `__NN-*__`
+  entries — closing renames but never frees a number, so numbers are never reused.
 
 ## Why this way
 - **Don't get lost:** surfacing from an arc → open the current `NN-<slug>-goal.md` → see the whole picture.
@@ -100,6 +132,11 @@ arcs lang [en|ru|es]          show or change this project's arc language
 arcs new-arc <slug>           standalone arc in .arcs/arcs/
 arcs new-arc -g <goal> <slug> arc inside a goal
 arcs new-goal <slug>          goal in .arcs/goals/
+arcs close [-g <goal>] <slug> close an arc: rename NN-slug → __NN-slug__ + status: done (refuses empty output/; -f overrides)
+arcs reopen [-g <goal>] <slug> reopen: __NN-slug__ → NN-slug + status: active
+arcs rule list                rules + enabled state
+arcs rule on|off <slug>       flip a rule's enabled: line
+arcs rule add <slug>          scaffold a new rule (disabled)
 arcs status                   the status board (also shows the language)
 arcs update                   git pull the method + re-wire skill/hooks
 ```

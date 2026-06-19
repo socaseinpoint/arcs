@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # arcs — file-based work method CLI (arc + goal).
-# Subcommands: init · new-arc · new-goal · status · lang · update · help
-# Work lives in a hidden meta dir: .arcs/{arcs,goals}/
+# Subcommands: init · new-arc · new-goal · close · reopen · status · lang · rule · update · help
+# Work lives in a hidden meta dir: .arcs/{arcs,goals,rules}/
 set -euo pipefail
 
 # --- helpers ---------------------------------------------------------------
@@ -27,12 +27,16 @@ lang_of() {    # project's arc language from .arcs/config (default en)
   echo "${l:-en}"
 }
 
-next_num() {   # next zero-padded NN in a dir of NN-<slug>/ entries
-  local dir="$1" max=0 n
+rule_enabled() {  # $1=rule file -> echo true|false (the value of the `enabled:` line)
+  grep -m1 -E '^enabled:' "$1" 2>/dev/null | sed -E 's/^enabled:[[:space:]]*//' | tr -d '[:space:]'
+}
+
+next_num() {   # next zero-padded NN — counts open NN-<slug>/ AND closed __NN-<slug>__/ entries
+  local dir="$1" max=0 n base
   if [ -d "$dir" ]; then
-    for d in "$dir"/[0-9][0-9]-*/; do
+    for d in "$dir"/[0-9][0-9]-*/ "$dir"/__[0-9][0-9]-*__/; do
       [ -d "$d" ] || continue
-      n=$(basename "$d"); n=${n%%-*}; n=$((10#$n))
+      base=$(basename "$d"); base=${base#__}; n=${base%%-*}; n=$((10#$n))
       [ "$n" -gt "$max" ] && max=$n
     done
   fi
@@ -150,7 +154,17 @@ Follows the **arcs** method. Work lives in \`.arcs/\` (meta), kept in: $lang.
 - \`.arcs/goals/\` — multi-arc goals
 Status: \`arcs status\` · change language: \`arcs lang <en|ru>\`
 EOF
-  echo "arcs: initialized $b/ (lang=$lang)"
+  # seed default rules (opt-out behavior layer; toggle with `arcs rule on|off <slug>`)
+  mkdir -p "$b/rules"
+  local repo; repo="$(repo_dir)"
+  if [ ! -f "$b/rules/subagents.md" ]; then
+    if [ -f "$repo/template/rules/subagents.md" ]; then
+      cp "$repo/template/rules/subagents.md" "$b/rules/subagents.md"
+    else
+      printf '# subagents\nenabled: true\n\nDelegate arc execution to subagents; run independent arcs in parallel; the orchestrator reads only each arc'"'"'s output/.\n' > "$b/rules/subagents.md"
+    fi
+  fi
+  echo "arcs: initialized $b/ (lang=$lang, rules: subagents)"
 }
 
 cmd_lang() {
@@ -201,6 +215,11 @@ cmd_status() {
   print_arc() { local md="$1" ind="$2" n; n=$(dirname "$md" | xargs basename)
     printf "%s%-34s %-9s %s\n" "$ind" "$n" "[$(field "$md" status)]" "$(field "$md" goal)"; }
   [ -d "$b" ] && echo "lang: $( [ -d .arcs ] && lang_of || echo en )"
+  if [ -d "$b/rules" ]; then
+    local on=""; for f in "$b"/rules/*.md; do [ -f "$f" ] || continue
+      [ "$(rule_enabled "$f")" = true ] && on="$on $(basename "$f" .md)"; done
+    [ -n "$on" ] && echo "rules:$on"
+  fi
   if [ -d "$b/goals" ]; then echo "GOALS"
     for g in "$b"/goals/*/; do [ -d "$g" ] || continue
       local cur; cur=$(ls "$g"/*-goal.md 2>/dev/null | sort | tail -1 || true)
@@ -232,9 +251,95 @@ cmd_help() { sed -n '2,4p' "$0" | sed 's/^# \{0,1\}//'; cat <<EOF
   arcs new-arc <slug>               new standalone arc in .arcs/arcs/
   arcs new-arc -g <goal> <slug>     new arc inside a goal
   arcs new-goal <slug>              new goal in .arcs/goals/
+  arcs close [-g <goal>] [-f] <slug> mark an arc done: rename NN-slug -> __NN-slug__ (needs non-empty output/; -f overrides)
+  arcs reopen [-g <goal>] <slug>    undo a close: __NN-slug__ -> NN-slug
+  arcs rule [list|on|off|add] ...   toggle behavior rules in .arcs/rules/
   arcs status                       print the board
   arcs update                       git pull the method + re-wire skill/hooks
 EOF
+}
+
+cmd_rule() {
+  [ -d .arcs ] || die "no .arcs/ here — run: arcs init"
+  local action="${1:-list}" slug="${2:-}" rd=".arcs/rules" f val tmp
+  case "$action" in
+    list|"")
+      if [ ! -d "$rd" ] || [ -z "$(ls -A "$rd" 2>/dev/null)" ]; then echo "rules: (none)"; return; fi
+      for f in "$rd"/*.md; do [ -f "$f" ] || continue
+        printf "  %-20s [%s]\n" "$(basename "$f" .md)" "$(rule_enabled "$f")"
+      done ;;
+    on|off)
+      [ -n "$slug" ] || die "usage: arcs rule $action <slug>"
+      f="$rd/$slug.md"; [ -f "$f" ] || die "rule '$slug' not found in $rd/"
+      val=true; [ "$action" = off ] && val=false
+      tmp="$(mktemp)"
+      if grep -q -E '^enabled:' "$f"; then
+        sed -E "s/^enabled:.*/enabled: $val/" "$f" > "$tmp" && mv "$tmp" "$f"
+      else
+        { head -1 "$f"; printf 'enabled: %s\n' "$val"; tail -n +2 "$f"; } > "$tmp" && mv "$tmp" "$f"
+      fi
+      echo "arcs: rule $slug -> enabled: $val" ;;
+    add)
+      [ -n "$slug" ] || die "usage: arcs rule add <slug>"
+      mkdir -p "$rd"; f="$rd/$slug.md"
+      [ -f "$f" ] && die "rule '$slug' already exists: $f"
+      cat > "$f" <<EOF
+# $slug
+enabled: false
+
+<describe the behavior the agent must follow when this rule is enabled>
+EOF
+      echo "arcs: created rule $f (enabled: false — turn on with: arcs rule on $slug)" ;;
+    *) die "usage: arcs rule [list | on <slug> | off <slug> | add <slug>]" ;;
+  esac
+}
+
+# resolve the arcs/ dir to search (a goal's arcs/, or the standalone .arcs/arcs/)
+_arc_searchdir() {   # $1=goal_slug (may be empty) -> echoes dir or dies
+  local b=".arcs" gdir
+  if [ -n "${1:-}" ]; then
+    gdir=$(ls -d "$b"/goals/[0-9][0-9]-"$1"/ 2>/dev/null | head -1) || true
+    [ -n "$gdir" ] || die "goal '$1' not found in $b/goals/"
+    echo "${gdir%/}/arcs"
+  else echo "$b/arcs"; fi
+}
+
+cmd_close() {
+  local goal_slug="" force=0 slug="" sd dir name
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      -g)         goal_slug="$2"; shift 2 ;;
+      -f|--force) force=1; shift ;;
+      *)          slug="$1"; shift ;;
+    esac
+  done
+  [ -n "$slug" ] || die "usage: arcs close [-g <goal>] [-f] <slug>"
+  [ -d .arcs ] || die "no .arcs/ here"
+  sd=$(_arc_searchdir "$goal_slug")
+  dir=$(ls -d "$sd"/[0-9][0-9]-"$slug"/ 2>/dev/null | head -1) || true
+  [ -n "$dir" ] || die "open arc '$slug' not found in $sd/ (already closed?)"
+  dir="${dir%/}"; name=$(basename "$dir")
+  # an arc closes with a self-contained output/ — refuse to close it empty (override: -f)
+  if [ "$force" -eq 0 ] && [ -z "$(ls -A "$dir/output" 2>/dev/null)" ]; then
+    die "arc '$slug' has an empty output/ — write the result there first (a closed arc must carry a self-contained output). override: arcs close -f $slug"
+  fi
+  if [ -f "$dir/arc.md" ]; then local tmp; tmp="$(mktemp)"; sed -E 's/^status:.*/status: done/' "$dir/arc.md" > "$tmp" && mv "$tmp" "$dir/arc.md"; fi
+  mv "$dir" "$sd/__${name}__"
+  echo "arcs: closed $name -> __${name}__ (status: done)"
+}
+
+cmd_reopen() {
+  local goal_slug="" slug sd dir name open
+  if [ "${1:-}" = "-g" ]; then goal_slug="$2"; shift 2; fi
+  slug="${1:-}"; [ -n "$slug" ] || die "usage: arcs reopen [-g <goal>] <slug>"
+  [ -d .arcs ] || die "no .arcs/ here"
+  sd=$(_arc_searchdir "$goal_slug")
+  dir=$(ls -d "$sd"/__[0-9][0-9]-"$slug"__/ 2>/dev/null | head -1) || true
+  [ -n "$dir" ] || die "closed arc '$slug' not found in $sd/"
+  dir="${dir%/}"; name=$(basename "$dir"); open="${name#__}"; open="${open%__}"
+  mv "$dir" "$sd/$open"
+  if [ -f "$sd/$open/arc.md" ]; then local tmp; tmp="$(mktemp)"; sed -E 's/^status:.*/status: active/' "$sd/$open/arc.md" > "$tmp" && mv "$tmp" "$sd/$open/arc.md"; fi
+  echo "arcs: reopened $open"
 }
 
 # --- dispatch --------------------------------------------------------------
@@ -244,6 +349,9 @@ case "$sub" in
   lang)      cmd_lang "$@" ;;
   new-arc)   cmd_new_arc "$@" ;;
   new-goal)  cmd_new_goal "$@" ;;
+  close)     cmd_close "$@" ;;
+  reopen)    cmd_reopen "$@" ;;
+  rule)      cmd_rule "$@" ;;
   status)    cmd_status "$@" ;;
   update)    cmd_update "$@" ;;
   help|-h|--help) cmd_help ;;
