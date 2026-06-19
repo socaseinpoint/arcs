@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="style.css?v=3" />
+<link rel="stylesheet" href="style.css?v=4" />
 </head>
 <body>
 
@@ -81,16 +81,16 @@
       </div>
       <div class="why reveal">
         <div class="reason">
-          <span class="rk">// work is never lost</span>
-          <p>It lives in files, not chat. Crash a session, blow your context, hand it to another agent — the work is still on disk, right where it stopped.</p>
+          <span class="rk">// where did we stop?</span>
+          <p>Status persists across sessions. A fresh agent — or you tomorrow — asks "where did we stop?" and gets the answer from the files, or one <code>arcs status</code>. A cold handoff that just resumes, no chat-scrolling.</p>
         </div>
         <div class="reason">
-          <span class="rk">// traceable</span>
-          <p>Goals are immutable and form chains, so you can see how the thinking evolved — every pivot is a linked file, not an overwrite.</p>
+          <span class="rk">// ideas surface, don't leak</span>
+          <p>An idea that pops up mid-task isn't lost in the scroll. <code>arcs candidate</code> parks it, and it bubbles up onto the board until you promote it. Future work surfaces instead of evaporating.</p>
         </div>
         <div class="reason">
           <span class="rk">// agent-native</span>
-          <p>The agent structures and parallelizes the work itself — each arc is an encapsulated unit, so independent arcs run as parallel subagents.</p>
+          <p>The agent structures and parallelizes the work itself — each arc is an encapsulated unit, so independent arcs run as parallel subagents. Goals are immutable and chain, so every pivot stays traceable.</p>
         </div>
       </div>
     </div>
@@ -118,17 +118,54 @@ git clone https://github.com/socaseinpoint/arcs ~/arcs &amp;&amp; cd ~/arcs &amp
             arcs. Open a new shell afterwards. <a class="inline-link" href="docs.html#setup">Setup for your OS →</a>
           </p>
 
-          <p class="prose"><b>2 · then just tell your agent what to build.</b> Open your project in Claude
+          <p class="prose"><b>2 · opt your project in — once.</b> Run <code>arcs init</code> in the project
+            directory and from then on the work <em>binds to that directory</em>: it lands in a hidden
+            <code>.arcs/</code> at the root, so your code is never cluttered, and the thread lives with the
+            repo instead of inside a chat. One command you remember; everything after it is the agent's job.</p>
+        </div>
+      </div>
+
+      <div class="body-grid reveal" style="margin-top:2.4rem;">
+        <div></div>
+        <div>
+          <figure>
+            <div class="figcap"><span>.arcs/ — plain files, for humans and agents</span><span>tree</span></div>
+<pre>my-project/
+  .arcs/                            <span class="c"># hidden at the root — your code stays clean</span>
+    config                          <span class="c"># arc language + the rules= toggle</span>
+    candidates/                     <span class="c"># parked ideas, surfaced onto the board</span>
+    arcs/                           <span class="c"># ONE continuous stream:</span>
+      __01-spike-redis__/           <span class="a">an arc, done — __…__ marks it closed</span>
+      02-@payments/                 <span class="a">a goal — an arc WITH a purpose (@ marks it)</span>
+        payments-goal.md            <span class="c"># immutable: goal + checklist + "you are here"</span>
+        arcs/
+          01-stripe/                <span class="c"># a sub-arc inside the goal</span>
+            input/  workspace/  output/   <span class="a">← outside reads ONLY output/</span>
+            arc.md                  <span class="c"># passport: goal · status · pointers</span>
+  &lt;your code&gt;</pre>
+          </figure>
+          <p class="prose dim">
+            That's the whole record — legible to you at a glance and to the agent that keeps it. Plain named
+            folders, no app, no database. Finished work is obvious from a bare <code>ls</code>.
+          </p>
+        </div>
+      </div>
+
+      <div class="body-grid reveal" style="margin-top:2.4rem;">
+        <div></div>
+        <div>
+          <p class="prose"><b>3 · then just tell your agent what to build.</b> Open your project in Claude
             Code and describe the work. The agent drives <code>arcs</code> for you — it opens an arc or goal,
             works <code>input → workspace → output</code>, and closes it when the result is self-contained.
             You never type the commands; the structure just appears on disk as the agent goes.</p>
 
           <p class="prose dim">
-            <b>3 · peek if you want.</b> The one line a human might actually run —
+            <b>peek if you want.</b> The one line a human might actually run —
             <code>arcs status</code> — prints the board the agent is keeping: what's open, what's done, where
-            the work stands. Everything else (<code class="k">new-goal</code>, <code class="k">new-arc</code>,
-            <code class="k">close</code>…) is what the <em>agent</em> runs, not a how-to for you. The full
-            command set and the per-OS setup live in the <a class="inline-link" href="docs.html#setup">docs</a>.
+            the work stands, plus any parked candidates. Everything else (<code class="k">new-goal</code>,
+            <code class="k">new-arc</code>, <code class="k">close</code>…) is what the <em>agent</em> runs, not
+            a how-to for you. The full command set and per-OS setup live in the
+            <a class="inline-link" href="docs.html#setup">docs</a>.
           </p>
         </div>
       </div>

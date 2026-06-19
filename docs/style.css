@@ -189,10 +189,44 @@ body.docs { scroll-padding-top: 80px; }
 
 /* ---- section nav (sticky, scroll-spy) ---- */
 .docs-nav { position: sticky; top: 80px; align-self: start; }
-@media (max-width: 880px) {
-  .docs-nav { position: static; top: auto; border: 1px solid var(--line); padding: 1rem 1.2rem; }
-}
+
+/* desktop: the <details> is purely structural — always expanded, summary acts as the label.
+   the disclosure behavior only kicks in at the mobile breakpoint below. */
+.docs-nav-disclosure > summary { list-style: none; }
+.docs-nav-disclosure > summary::-webkit-details-marker { display: none; }
+.docs-nav-disclosure > summary::marker { content: ""; }
+.docs-nav-disclosure > *:not(summary) { display: revert; }
+.docs-nav-caret { display: none; }
 .docs-nav-label { display: block; margin: 0 0 1rem; }
+summary.docs-nav-label { cursor: default; }
+
+@media (max-width: 880px) {
+  .docs-nav {
+    position: sticky; top: 60px; z-index: 10;
+    border: 1px solid var(--line); background: var(--bg-soft);
+  }
+  /* collapsed disclosure: a single tappable line until opened */
+  .docs-nav-disclosure > summary {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 0.6rem; cursor: pointer; user-select: none;
+    margin: 0; padding: 0.85rem 1.1rem;
+    color: var(--ink);
+  }
+  summary.docs-nav-label { cursor: pointer; }
+  .docs-nav-caret {
+    display: inline-block; color: var(--ink-dim); font-size: 0.85em;
+    transition: transform var(--dur) var(--ease);
+  }
+  .docs-nav-disclosure[open] > summary { border-bottom: 1px solid var(--line); }
+  .docs-nav-disclosure[open] .docs-nav-caret { transform: rotate(180deg); }
+  /* closed by default: UA hides non-summary children — only reveal them when open */
+  .docs-nav-disclosure > *:not(summary) { display: none; }
+  .docs-nav-disclosure[open] > nav { display: block; padding: 0.6rem 0.6rem 0.2rem; }
+  .docs-nav-disclosure[open] > .docs-nav-foot { display: block; padding: 0 1.1rem 0.9rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .docs-nav-caret { transition: none; }
+}
 .docs-nav ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.15rem; counter-reset: navc; }
 .docs-nav li { counter-increment: navc; }
 .docs-nav ol a {
