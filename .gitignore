@@ -1,3 +1,7 @@
 .DS_Store
 .playwright-mcp/
 .vercel
+
+# arcs update-check runtime state (per-install, never committed)
+.arcs-update-required
+.arcs-update-stamp

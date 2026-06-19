@@ -32,9 +32,14 @@ content in it. Change later with `arcs lang <code>`.
 
 Update later — one command, from anywhere:
 ```bash
+arcs version                     # what you have installed
 arcs update                      # git pull + re-wire PATH, skill, and hooks (idempotent)
 ```
 (then restart your Claude Code session so it reloads the skill)
+
+Each session a throttled check (≤1/day) nudges you when a newer release exists — no action needed,
+just a one-line `update available: arcs X` on the board. A release that breaks compatibility raises
+`MIN_VERSION`; installs below it are hard-blocked from editing until `arcs update`.
 
 Needs bash + grep/sed (macOS/Linux). No build step. Full guide: `docs/DEPLOY.md`. Method: `SPEC.md`.
 
@@ -61,7 +66,7 @@ in `<repo>/rules/`, toggled per project via `rules=` in `.arcs/config`.
 ```
 arcs/                        tooling + spec, lives outside your projects
   SPEC.md                    the full method
-  bin/arcs                   CLI: init · new-arc · new-goal · close · reopen · candidate · promote · rule · status · lang · update
+  bin/arcs                   CLI: init · new-arc · new-goal · close · reopen · candidate · promote · rule · status · lang · version · check-update · update
   install.sh                 PATH + Claude skill setup
   rules/                     global rule bodies (toggled per project via .arcs/config rules=)
   template/README.md         project-README template for an arcs-using repo

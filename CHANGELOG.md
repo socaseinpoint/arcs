@@ -6,6 +6,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-06-18
+
+### Added
+- **Version-aware update.** The install now carries a version (`VERSION` at the repo root) and the CLI
+  knows when it's stale. `arcs version` prints what you have; `arcs check-update` runs a throttled
+  (≤1/day), `timeout`-capped, never-fatal `git fetch --tags` and compares your install against the
+  latest release tag. The SessionStart hook calls it, so the board carries a one-line
+  `update available: arcs X` when a newer release exists — informational, nothing blocks. Offline no-ops.
+- **Breaking-update floor.** A release that breaks compatibility raises `MIN_VERSION` to its own
+  version. `check-update` reads that floor from the fetched `origin/main` (visible *before* you pull);
+  an install below it gets a hard `arcs-gate` block on project edits until `arcs update` clears it.
+- **`arcs update` feedback.** Now reports `before → after` and clears the breaking-update flag on success.
+
+### Changed
+- Runtime state (`.arcs-update-stamp`, `.arcs-update-required`) lives at the repo root and is git-ignored.
+- `docs/DEPLOY.md` gains a maintainer "Cutting a release" checklist (bump VERSION, move CHANGELOG, tag).
+
 ## [0.2.0] - 2026-06-18
 
 ### Added

@@ -66,10 +66,31 @@ After wiring, restart your Claude Code session.
 ## Updating
 One command, from anywhere — the CLI knows where it was cloned:
 ```bash
+arcs version         # what you have installed (reads repo-root VERSION)
 arcs update          # git pull + re-wire PATH, skill, and hook (idempotent)
 ```
 Then restart your Claude Code session so it picks up the new skill + hook. Your projects' `.arcs/`
 data is untouched.
+
+### How you find out a release exists
+The SessionStart hook runs `arcs check-update`: a throttled (≤1/day), `timeout`-capped, never-fatal
+`git fetch --tags` that compares your install against the latest release tag. If you're behind, the
+board carries a one-line `update available: arcs X` — informational, nothing blocks. Offline just
+no-ops. Runtime state (`.arcs-update-stamp`, `.arcs-update-required`) lives at the repo root and is
+git-ignored.
+
+A release that **breaks compatibility** bumps `MIN_VERSION` to its own version. `check-update` reads
+that floor from the fetched `origin/main` (so it's visible *before* you pull); an install below the
+floor is hard-blocked from editing by `arcs-gate` until `arcs update` clears it.
+
+## Cutting a release (maintainers)
+A release is a deliberate bump, not just a push to `main`:
+1. Edit `VERSION` to the new `X.Y.Z`. Raise `MIN_VERSION` **only** if this release breaks older installs.
+2. Move the `CHANGELOG.md` `[Unreleased]` notes under a new `## [X.Y.Z] - <date>` heading.
+3. Commit, then tag `vX.Y.Z` and push tags: `git tag vX.Y.Z && git push && git push --tags`.
+
+The tag is what `check-update` compares against, so the nudge only fires for tagged releases — work in
+flight on `main` never trips it.
 
 ## Requirements
 bash + standard coreutils (grep, sed); `python3` for hook registration. No build step.

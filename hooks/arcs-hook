@@ -27,6 +27,8 @@ case "$event" in
   SessionStart)
     echo "[arcs] This project uses the arcs method (.arcs/ present). Current board:"
     ( cd "$dir" && "$ARCS" status 2>/dev/null ) || true
+    # Throttled (≤1/day) release check — one-line nudge if behind, silent if current.
+    "$ARCS" check-update 2>/dev/null || true
     echo "Before any non-trivial task: open an arc/goal FIRST, then work input→workspace→output."
     ;;
   *)

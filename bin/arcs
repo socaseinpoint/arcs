@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # arcs — file-based work method CLI (arc + goal).
-# Subcommands: init · new-arc · new-goal · close · reopen · supersede · candidate · promote · rule · status · lang · update · help
+# Subcommands: init · new-arc · new-goal · close · reopen · supersede · candidate · promote · rule · status · lang · version · check-update · update · help
 # Work lives in a hidden meta dir: .arcs/{arcs,candidates,rules}/ — arcs and goals share one numbered stream.
 set -euo pipefail
 
@@ -361,18 +361,78 @@ cmd_status() {
   fi
 }
 
+# --- versioning ------------------------------------------------------------
+# Single source of truth lives at repo root: VERSION (current release) and
+# MIN_VERSION (breaking floor — installs below this must update). Both bumped
+# at release time alongside a matching git tag + CHANGELOG entry.
+UPDATE_FLAG=".arcs-update-required"   # written under repo root when the breaking floor is unmet
+UPDATE_STAMP=".arcs-update-stamp"     # mtime throttles the once-a-day remote check
+
+read_ver() {   # $1=repo $2=filename -> version (default 0.0.0)
+  local f="$1/$2"
+  if [ -f "$f" ]; then tr -d '[:space:]' < "$f"; else echo "0.0.0"; fi
+}
+
+ver_le() {   # is $1 <= $2 ? (semver) -> exit 0/1
+  [ "$1" = "$2" ] && return 0
+  [ "$(printf '%s\n%s\n' "$1" "$2" | sort -V | head -1)" = "$1" ]
+}
+
+latest_remote_tag() {   # $1=repo -> highest vX.Y.Z tag, sans leading v (empty if none)
+  git -C "$1" tag -l 'v*' --sort=-v:refname 2>/dev/null | head -1 | sed 's/^v//'
+}
+
+cmd_version() { echo "arcs $(read_ver "$(repo_dir)" VERSION)"; }
+
+cmd_check_update() {   # [--force] [--quiet] — throttled remote check; sets/clears the gate flag
+  local force="" quiet="" a repo; repo="$(repo_dir)"
+  for a in "$@"; do case "$a" in --force) force=1 ;; --quiet) quiet=1 ;; esac; done
+  [ -d "$repo/.git" ] || return 0   # not a clone: nothing to check
+  local stamp="$repo/$UPDATE_STAMP" flag="$repo/$UPDATE_FLAG"
+  # Network only once/day (unless --force), capped + non-fatal so it never blocks a session.
+  if [ -n "$force" ] || [ -z "$(find "$stamp" -mmin -1440 2>/dev/null)" ]; then
+    timeout 4 git -C "$repo" fetch --tags --quiet origin 2>/dev/null || true
+    touch "$stamp" 2>/dev/null || true
+  fi
+  local cur latest rmin
+  cur="$(read_ver "$repo" VERSION)"
+  latest="$(latest_remote_tag "$repo")"
+  # Read the breaking floor from the fetched remote (not the local working tree),
+  # so a not-yet-pulled breaking release is still visible.
+  rmin="$(git -C "$repo" show origin/main:MIN_VERSION 2>/dev/null | tr -d '[:space:]' || true)"; rmin="${rmin:-0.0.0}"
+  # Hard floor: current install below the remote-declared minimum.
+  if ver_le "$rmin" "$cur"; then
+    rm -f "$flag" 2>/dev/null || true
+  else
+    touch "$flag" 2>/dev/null || true
+    [ -n "$quiet" ] || echo "[arcs] BREAKING update required (need ≥ $rmin, have $cur) — run: arcs update"
+    return 0
+  fi
+  # Soft nudge: behind the latest release tag.
+  if [ -n "$latest" ] && ! ver_le "$latest" "$cur"; then
+    [ -n "$quiet" ] || echo "[arcs] update available: arcs $latest (you have $cur) — run: arcs update"
+  fi
+}
+
 cmd_update() {
   local repo; repo="$(repo_dir)"
   [ -d "$repo/.git" ] || die "not a git clone: $repo (re-clone from github.com/socaseinpoint/arcs)"
-  echo "arcs: updating $repo"
+  local before; before="$(read_ver "$repo" VERSION)"
+  echo "arcs: updating $repo (have $before)"
   git -C "$repo" pull --ff-only || die "git pull failed in $repo"
+  local after; after="$(read_ver "$repo" VERSION)"
+  rm -f "$repo/$UPDATE_FLAG" 2>/dev/null || true   # cleared: we're current now
   # re-run the installer so new tooling (skill, hooks) is wired in — idempotent.
   if [ -x "$repo/install.sh" ]; then
     bash "$repo/install.sh" >/dev/null 2>&1 && echo "arcs: tooling re-wired (PATH · skill · hooks)"
   elif [ -d "$HOME/.claude/skills" ]; then
     ln -sfn "$repo/skill" "$HOME/.claude/skills/arcs"
   fi
-  echo "arcs: up to date — restart your Claude Code session to reload skill + hooks"
+  if [ "$before" = "$after" ]; then
+    echo "arcs: already latest ($after)"
+  else
+    echo "arcs: $before → $after — see CHANGELOG.md; restart your Claude Code session to reload skill + hooks"
+  fi
 }
 
 cmd_help() { sed -n '2,4p' "$0" | sed 's/^# \{0,1\}//'; cat <<EOF
@@ -390,6 +450,8 @@ cmd_help() { sed -n '2,4p' "$0" | sed 's/^# \{0,1\}//'; cat <<EOF
   arcs candidate list               list candidates (also shown by arcs status)
   arcs promote [-g <goal>] <slug>   turn a candidate into a real arc (moves it into the arc's input/)
   arcs status                       print the board
+  arcs version                      print the installed arcs version
+  arcs check-update                 throttled remote check; nudge if a newer release exists
   arcs update                       git pull the method + re-wire skill/hooks
 EOF
 }
@@ -569,6 +631,8 @@ case "$sub" in
   candidate) cmd_candidate "$@" ;;
   promote)   cmd_promote "$@" ;;
   status)    cmd_status "$@" ;;
+  version|--version|-V) cmd_version ;;
+  check-update) cmd_check_update "$@" ;;
   update)    cmd_update "$@" ;;
   help|-h|--help) cmd_help ;;
   *) die "unknown command '$sub' (try: arcs help)" ;;

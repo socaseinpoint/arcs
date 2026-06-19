@@ -19,6 +19,20 @@ except Exception: print("")' 2>/dev/null || echo "")"
 # Always allow writing the arcs bookkeeping itself.
 case "$fp" in *"/.arcs/"*|*".arcs/"*) exit 0 ;; esac
 
+# Hard breaking-update gate: if check-update flagged this install as below the
+# breaking floor, block all project edits until `arcs update`. Cheap file test,
+# no network. The flag lives at the arcs repo root; resolve it like the hook does.
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ]; do
+  D="$(cd -P "$(dirname "$SOURCE")" && pwd)"; SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$D/$SOURCE"
+done
+REPO="$(cd -P "$(dirname "$SOURCE")/.." && pwd)"
+if [ -f "$REPO/.arcs-update-required" ]; then
+  echo "[arcs] Blocked: a BREAKING arcs update is required before editing. Run \`arcs update\`, then restart your Claude Code session." >&2
+  exit 2
+fi
+
 # Allow once at least one arc/goal is active.
 if grep -rqsE '^status:[[:space:]]*active' "$dir/.arcs" 2>/dev/null; then exit 0; fi
 
