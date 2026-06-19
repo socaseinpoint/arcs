@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Immutable goals + supersession chains.** A goal's intent no longer gets edited in place. When the
+  aim actually changes, `arcs supersede [-g <goal>] <old> <new>` closes the old unit and opens a new one
+  carrying `supersedes: <old>` (with `input/from-<old>.md` seeded as a pointer back) — a traceable chain,
+  both still on disk, rather than a rename or an overwrite. `closes:` and `supersedes:` are new optional
+  `arc.md` fields (shipped commented in the template); `prev:` is read as an alias of `supersedes:`.
+- **Goal checklists, computed not hand-ticked.** A goal can carry a `## Checklist`; items stay `- [ ]`
+  and a sub-arc that finishes one declares `closes: <item-key>`. `arcs status` does the rest — `N/M ✓`
+  on the goal line, then `✓ <key> → <arc>` for closed items and `○ <key>` for the rest. You never tick
+  by hand, because a manual check is exactly the drift this method exists to avoid. A goal with no
+  checklist falls back to the old raw sub-arc list.
 - **Rules — a toggleable behavior layer.** Rule **bodies are global**, shipped in the method
   repo at `<arcs-repo>/rules/<slug>.md` and versioned with the method (so `arcs update` brings
   new rules to every project). The **on/off switch** is the `rules=` line in `.arcs/config`
@@ -30,6 +40,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   spec demoted, honest "works with or without an agent" framing. README links to the landing.
 
 ### Changed
+- **Dropped goal-doc version numbering.** A goal is now one immutable `<slug>-goal.md` — no `MM-`
+  prefix, no `version:` line. The version axis is replaced by the checklist + supersession chains above.
+  `SPEC.md`, `skill/SKILL.md`, `examples/`, the landing, and the `goal_md` template were updated to match.
 - **One stream, no separate goals dir.** Dropped `.arcs/goals/`. Arcs and goals now share a single
   continuous numbered stream in `.arcs/arcs/`; a goal is marked by an `@` in its name (`NN-@<slug>/`)
   and keeps its own nested `arcs/` substream + versioned goal doc. Numbering counts open `NN-*`,

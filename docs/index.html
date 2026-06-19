@@ -133,7 +133,7 @@ cd my-project &amp;&amp; <span class="k">arcs init</span>      <span class="c">#
         <div class="concept">
           <span class="tag">goal</span>
           <h3><span data-l="ru">arc с целью</span><span data-l="en">an arc with a purpose</span></h3>
-          <p><span data-l="ru">Тот же скелет (<code>input/ workspace/ output/</code>) плюс собственный <code>arcs/</code> и версионируемый статус-док <code>NN-&lt;slug&gt;-goal.md</code>. Для проекта или глубокого ресёрча — многоарочной работы.</span><span data-l="en">The same skeleton (<code>input/ workspace/ output/</code>) plus its own <code>arcs/</code> and a versioned status doc <code>NN-&lt;slug&gt;-goal.md</code>. For a project or deep research — multi-arc work.</span></p>
+          <p><span data-l="ru">Тот же скелет (<code>input/ workspace/ output/</code>) плюс собственный <code>arcs/</code> и неизменяемый статус-док <code>&lt;slug&gt;-goal.md</code> — строка <code>goal:</code> плюс <code>## Checklist</code>. Для проекта или глубокого ресёрча — многоарочной работы.</span><span data-l="en">The same skeleton (<code>input/ workspace/ output/</code>) plus its own <code>arcs/</code> and one immutable status doc <code>&lt;slug&gt;-goal.md</code> — a <code>goal:</code> line plus a <code>## Checklist</code>. For a project or deep research — multi-arc work.</span></p>
         </div>
         <div class="concept">
           <span class="tag">.arcs/</span>
@@ -146,7 +146,8 @@ cd my-project &amp;&amp; <span class="k">arcs init</span>      <span class="c">#
         <div></div>
         <div>
           <p class="prose"><span data-l="ru"><b>Инкапсуляция — жёсткое правило.</b> Всё, что нужно следующему шагу, должно быть <em>выводимо из <code>output/</code> в одиночку</em>. <code>workspace/</code> приватный, наружу не течёт. <code>input/</code> — то, что пришло. Закрыл арку → <code>output/</code> стоит сам по себе. OOP-аналогия: input = аргументы конструктора, workspace = приватное состояние, output = публичный интерфейс.</span><span data-l="en"><b>Encapsulation is a hard rule.</b> Anything the next step needs must be <em>derivable from <code>output/</code> alone</em>. <code>workspace/</code> is private and never leaks. <code>input/</code> is what came in. Close an arc → its <code>output/</code> stands on its own. The OOP analogy: input = constructor args, workspace = private state, output = public interface.</span></p>
-          <p class="prose dim"><span data-l="ru"><b>Версионирование цели — номером, не правкой.</b> Файлы <code>01-&lt;slug&gt;-goal.md</code>, <code>02-…</code>, <code>03-…</code>. Высший номер = текущий = авторитетный; старые — история, их не трогают. Обновить цель = положить рядом новую версию. Версия фиксирует разворот.</span><span data-l="en"><b>Versioning a goal — by number, not by edit.</b> Files <code>01-&lt;slug&gt;-goal.md</code>, <code>02-…</code>, <code>03-…</code>. The highest number = current = authoritative; old ones are history, never touched. Update a goal = drop a new version beside it. A version captures a pivot.</span></p>
+          <p class="prose dim"><span data-l="ru"><b>Цель неизменяема.</b> Намерение не правится на месте. Меняется цель — не переписываешь, а <code>arcs supersede &lt;old&gt; &lt;new&gt;</code>: старая закрывается, новая несёт <code>supersedes:</code> — прослеживаемая цепочка разворотов, обе на диске. Никаких номеров версий: один <code>&lt;slug&gt;-goal.md</code>.</span><span data-l="en"><b>A goal is immutable.</b> Intent isn't edited in place. The aim changed? You don't rewrite — you <code>arcs supersede &lt;old&gt; &lt;new&gt;</code>: the old one closes, the new one carries <code>supersedes:</code> — a traceable chain of pivots, both on disk. No version numbers: one <code>&lt;slug&gt;-goal.md</code>.</span></p>
+          <p class="prose dim"><span data-l="ru"><b>Чеклист считается из арок, не ставится руками.</b> Цель держит <code>## Checklist</code>; пункт всегда <code>- [ ]</code>. Закрывающая суб-арка несёт <code>closes: &lt;ключ&gt;</code>, и <code>arcs status</code> рисует <code>N/M ✓</code> + <code>✓ ключ → арка</code>. Руками не тикаешь — ручная галочка вернула бы тот самый дрейф, который метод убивает.</span><span data-l="en"><b>The checklist is computed from arcs, not hand-ticked.</b> A goal holds a <code>## Checklist</code>; every item stays <code>- [ ]</code>. The sub-arc that finishes one carries <code>closes: &lt;key&gt;</code>, and <code>arcs status</code> renders <code>N/M ✓</code> + <code>✓ key → arc</code>. You never tick by hand — a manual check would reintroduce the drift the method exists to kill.</span></p>
         </div>
       </div>
     </div>
@@ -206,14 +207,14 @@ cd my-project &amp;&amp; <span class="k">arcs init</span>      <span class="c">#
             <div class="figcap"><span>fig.01 — examples/basic/.arcs/</span><span><span data-l="ru">дерево</span><span data-l="en">tree</span></span></div>
 <pre>basic/.arcs/
   arcs/
-    01-spike-vite/                  <span class="c"># arc — one question, answered</span>
+    __01-spike-vite__/              <span class="c"># arc, done — the __…__ marks it closed</span>
       arc.md
       output/verdict.md             <span class="a">← the public interface (self-contained)</span>
     02-@newsletter/                 <span class="c"># goal — an arc WITH a purpose (@ marks it)</span>
-      01-newsletter-goal.md         <span class="c"># versioned status: where we are, which arcs are open</span>
+      newsletter-goal.md            <span class="c"># immutable status: goal line + checklist + where we are</span>
       arcs/
-        01-research/
-          arc.md
+        __01-research__/            <span class="c"># done sub-arc (closed) — wraps closes: research-stories</span>
+          arc.md                    <span class="c"># closes: research-stories → ticks a checklist item</span>
           input/sources.md          <span class="c"># what came in</span>
           output/shortlist.md       <span class="a">← what the next arc reads (and ONLY this)</span></pre>
           </figure>
@@ -226,9 +227,11 @@ cd my-project &amp;&amp; <span class="k">arcs init</span>      <span class="c">#
           <figure>
             <div class="figcap"><span>fig.02 — $ arcs status</span><span><span data-l="ru">доска</span><span data-l="en">the board</span></span></div>
 <pre>STREAM
-  01-spike-vite                      <span class="a">[done]</span>    check whether Vite 6 breaks our PostCSS setup
-  02-@newsletter                     <span class="a">[active]</span>  ship issue #1 of a weekly dev newsletter
-      01-research                      <span class="a">[done]</span>    gather candidate stories for issue #1
+  __01-spike-vite__                  <span class="a">[done]</span>    check whether Vite 6 breaks our PostCSS setup
+  02-@newsletter                     <span class="a">[active]</span>  ship issue #1 of a weekly dev newsletter   <span class="a">(1/3 ✓)</span>
+      ✓ research-stories             <span class="a">→ 01-research</span>
+      ○ draft-issue
+      ○ ship-issue
 
 CANDIDATES <span class="c"># surfaced arc-candidates, promote when ready</span>
   01-add-rss-feed                  <span class="a">from 02-@newsletter</span></pre>
@@ -242,7 +245,7 @@ CANDIDATES <span class="c"># surfaced arc-candidates, promote when ready</span>
           <div class="notes">
             <div class="note">
               <span class="nk">output/ <span data-l="ru">— это контракт</span><span data-l="en">is the contract</span></span>
-              <p><span data-l="ru">Арка-черновик читает <code>01-research/output/shortlist.md</code> и ничего из его <code>workspace/</code>. Закрыл арку → её output стоит сам по себе.</span><span data-l="en">The drafting arc reads <code>01-research/output/shortlist.md</code> and nothing from its <code>workspace/</code>. Close an arc → its output stands on its own.</span></p>
+              <p><span data-l="ru">Арка-черновик читает <code>__01-research__/output/shortlist.md</code> и ничего из его <code>workspace/</code>. Закрыл арку → её output стоит сам по себе (<code>__…__</code> метит закрытую).</span><span data-l="en">The drafting arc reads <code>__01-research__/output/shortlist.md</code> and nothing from its <code>workspace/</code>. Close an arc → its output stands on its own (the <code>__…__</code> marks it done).</span></p>
             </div>
             <div class="note">
               <span class="nk">arc <span data-l="ru">vs</span><span data-l="en">vs</span> goal</span>
@@ -250,7 +253,7 @@ CANDIDATES <span class="c"># surfaced arc-candidates, promote when ready</span>
             </div>
             <div class="note">
               <span class="nk">goal.md <span data-l="ru">— «ты здесь»</span><span data-l="en">— "you are here"</span></span>
-              <p><span data-l="ru">Вынырнув из глубокого дайва, открываешь <code>01-newsletter-goal.md</code> и сразу видишь боттлнек и что дальше.</span><span data-l="en">Surfacing from a deep dive, you open <code>01-newsletter-goal.md</code> and immediately see the bottleneck and what's next.</span></p>
+              <p><span data-l="ru">Вынырнув из глубокого дайва, открываешь <code>newsletter-goal.md</code> и сразу видишь чеклист, боттлнек и что дальше — один неизменяемый док, без версий.</span><span data-l="en">Surfacing from a deep dive, you open <code>newsletter-goal.md</code> and immediately see the checklist, the bottleneck, and what's next — one immutable doc, no versions.</span></p>
             </div>
           </div>
         </div>

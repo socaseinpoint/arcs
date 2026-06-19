@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # arcs — file-based work method CLI (arc + goal).
-# Subcommands: init · new-arc · new-goal · close · reopen · status · lang · rule · update · help
-# Work lives in a hidden meta dir: .arcs/{arcs,rules}/ — arcs and goals share one numbered stream.
+# Subcommands: init · new-arc · new-goal · close · reopen · supersede · candidate · promote · rule · status · lang · update · help
+# Work lives in a hidden meta dir: .arcs/{arcs,candidates,rules}/ — arcs and goals share one numbered stream.
 set -euo pipefail
 
 # --- helpers ---------------------------------------------------------------
@@ -70,7 +70,47 @@ next_num_file() {   # next NN among NN-<slug>.md files in $1 (candidates have th
   printf "%02d" $((max + 1))
 }
 
-# Templates. Field KEYS (goal:/status:/version:) stay English so the parser is language-agnostic;
+slugify() {   # item text -> stable key: lowercase, non-alnum -> '-', squeeze/trim '-'
+  printf '%s' "$1" | tr '[:upper:]' '[:lower:]' \
+    | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//'
+}
+
+read_supersedes() {   # $1=arc.md path -> the supersedes: value (prev: accepted as read-alias), '__' stripped
+  local v
+  v=$(grep -m1 -E '^(supersedes|prev):' "$1" 2>/dev/null \
+        | sed -E 's/^(supersedes|prev):[[:space:]]*//' || true)
+  v="${v#__}"; v="${v%__}"; echo "$v"
+}
+
+read_closes() {   # $1=arc.md path -> the closes: value (uncommented only), or empty
+  grep -m1 -E '^closes:' "$1" 2>/dev/null | sed -E 's/^closes:[[:space:]]*//' || true
+}
+
+goal_item_keys() {   # $1=goal-doc path -> one "key<TAB>text" per checklist item (between ## Checklist and next heading)
+  awk '
+    /^##[[:space:]]+[Cc]hecklist/ { inlist=1; next }
+    inlist && /^##[[:space:]]/    { inlist=0 }
+    inlist && /^- \[[ xX]\]/ {
+      line=$0
+      sub(/^- \[[ xX]\][[:space:]]*/, "", line)        # strip "- [ ] "
+      key=""
+      if (match(line, /\{#[^}]+\}/)) {                   # 1. explicit {#key} wins
+        key=substr(line, RSTART+2, RLENGTH-3)
+      } else {                                           # 2. "<key> — <desc>" form: leading slug token is the key
+        head=line
+        sub(/[[:space:]]*(—|–|--|-)[[:space:]].*/, "", head)
+        sub(/[[:space:]]+$/, "", head)
+        if (head ~ /^[A-Za-z0-9][A-Za-z0-9-]*$/) key=head
+      }                                                  # 3. else: empty -> caller slugifies whole text
+      text=line
+      gsub(/\{#[^}]+\}/, "", text)
+      sub(/[[:space:]]+$/, "", text)
+      print key "\t" text
+    }
+  ' "$1"
+}
+
+# Templates. Field KEYS (goal:/status:/closes:/supersedes:) stay English so the parser is language-agnostic;
 # only the human placeholder text + headings are localized.
 arc_md() {     # $1=path $2=slug $3=lang
   case "${3:-en}" in
@@ -79,9 +119,11 @@ arc_md() {     # $1=path $2=slug $3=lang
 
 goal: <одна строка — что закрывает арка>
 status: active
+# closes: <ключ пункта чеклиста родительской цели, который закрывает эта арка — опционально>
+# supersedes: <слаг арки, которую заменяет эта — опционально; алиас: prev:>
 
 ## input
-<что зашло>
+<input/… — однострочная суть того, что зашло>
 
 ## output → пойнтеры
 - <output/... — что наружу>
@@ -92,9 +134,11 @@ EOF
 
 goal: <una línea — qué cierra este arco>
 status: active
+# closes: <clave del ítem del checklist del objetivo padre que cierra este arco — opcional>
+# supersedes: <slug del arco que reemplaza este — opcional; alias: prev:>
 
 ## input
-<qué entró>
+<input/… — una línea con la esencia de lo que entró>
 
 ## output → punteros
 - <output/... — qué sale>
@@ -105,9 +149,11 @@ EOF
 
 goal: <one line — what this arc closes>
 status: active
+# closes: <parent-goal checklist-item key this arc completes — optional>
+# supersedes: <slug of the arc this one replaces — optional; alias: prev:>
 
 ## input
-<what came in>
+<input/… — one-line gist of what came in>
 
 ## output → pointers
 - <output/... — what goes outward>
@@ -116,48 +162,51 @@ EOF
   esac
 }
 
-goal_md() {    # $1=path $2=NN $3=slug $4=lang
-  case "${4:-en}" in
-    ru) cat > "$1/$2-$3-goal.md" <<EOF
-# $2-$3-goal — <цель>
+goal_md() {    # $1=path $2=slug $3=lang  (one immutable <slug>-goal.md — no MM- version prefix)
+  case "${3:-en}" in
+    ru) cat > "$1/$2-goal.md" <<EOF
+# $2-goal — <цель>
 
-goal: <цель — одна строка>
+goal: <цель — одна строка, ≤12 слов; длинная версия идёт в «Где мы сейчас»>
 status: active
-version: $2 (высший номер = текущий)
+# supersedes: <слаг цели, чьё намерение заменяет эта — опционально>
+
+## Checklist
+<пункты цели — ключ = слаг текста; done-состояние считается из closes: суб-арок, не ставится руками>
+- [ ] <первый пункт>
 
 ## Где мы сейчас
 <узкое горло>
-
-## Арки цели
-<NN-arc → output → статус>
 EOF
     ;;
-    es) cat > "$1/$2-$3-goal.md" <<EOF
-# $2-$3-goal — <objetivo>
+    es) cat > "$1/$2-goal.md" <<EOF
+# $2-goal — <objetivo>
 
-goal: <objetivo — una línea>
+goal: <objetivo — una línea, ≤12 palabras; la versión larga va en «Dónde estamos»>
 status: active
-version: $2 (número más alto = actual)
+# supersedes: <slug del objetivo cuya intención reemplaza este — opcional>
+
+## Checklist
+<ítems del objetivo — clave = slug del texto; el estado done se computa de closes: de los sub-arcos, no se marca a mano>
+- [ ] <primer ítem>
 
 ## Dónde estamos
 <cuello de botella>
-
-## Arcos de este objetivo
-<NN-arc → output → estado>
 EOF
     ;;
-    *) cat > "$1/$2-$3-goal.md" <<EOF
-# $2-$3-goal — <goal>
+    *) cat > "$1/$2-goal.md" <<EOF
+# $2-goal — <goal>
 
-goal: <goal — one line>
+goal: <goal — one line, ≤12 words; the long version goes in "Where we are">
 status: active
-version: $2 (highest number = current)
+# supersedes: <slug of the goal whose intent this one pivots from — optional>
+
+## Checklist
+<the goal's items — key = slug of the text; done-state is computed from sub-arcs' closes:, never hand-ticked>
+- [ ] <first item>
 
 ## Where we are
 <current bottleneck>
-
-## Arcs of this goal
-<NN-arc → output → status>
 EOF
     ;;
   esac
@@ -221,8 +270,66 @@ cmd_new_goal() {
   nn=$(next_num "$b/arcs")          # shared numbering with standalone arcs
   dir="$b/arcs/$nn-@$slug"          # @ marks a goal (arc with a purpose) in the stream
   mkdir -p "$dir"/{input,workspace,output,arcs}
-  goal_md "$dir" "01" "$slug" "$lang"   # 01 = goal status-doc version (highest = current)
-  echo "arcs: created $dir (goal — input/workspace/output/arcs + 01-$slug-goal.md, lang=$lang)"
+  goal_md "$dir" "$slug" "$lang"        # one immutable <slug>-goal.md (no version prefix)
+  echo "arcs: created $dir (goal — input/workspace/output/arcs + $slug-goal.md, lang=$lang)"
+}
+
+# bash 3.2 (macOS) — no associative arrays. Find the CLOSED sub-arc that closes a given key.
+closing_arc_for() {   # $1=goal dir  $2=item-key -> bare slug of the closed sub-arc declaring closes:<key>, or empty
+  local gdir="$1" key="$2" sub name
+  for sub in "$gdir"arcs/__[0-9][0-9]-*__/arc.md; do [ -f "$sub" ] || continue
+    [ "$(read_closes "$sub")" = "$key" ] || continue
+    name=$(basename "$(dirname "$sub")"); name="${name#__}"; name="${name%__}"
+    echo "$name"; return
+  done
+}
+
+# split a "key<TAB>text" row -> echo the resolved item key (explicit key, or slugify(text) if key empty).
+# (read -r with IFS=tab skips a *leading* tab, so an empty key would swallow the text — split by hand.)
+item_key() {   # $1=raw "key<TAB>text" row
+  local row="$1" k t
+  k="${row%%$'\t'*}"; t="${row#*$'\t'}"
+  [ -n "$k" ] && { echo "$k"; return; }
+  slugify "$t"
+}
+
+goal_progress_badge() {   # $1=goal dir  $2=goal-doc path -> "N/M ✓" over checklist items
+  local gdir="$1" gdoc="$2" row key done=0 total=0
+  while IFS= read -r row; do
+    [ -n "$row" ] || continue
+    key="$(item_key "$row")"
+    total=$((total+1)); [ -n "$(closing_arc_for "$gdir" "$key")" ] && done=$((done+1))
+  done <<< "$(goal_item_keys "$gdoc")"
+  printf "%d/%d ✓" "$done" "$total"
+}
+
+# Render a goal's sub-stream. $1=goal dir. Uses checklist (computed from sub-arcs' closes:)
+# when the goal doc carries a ## Checklist; else falls back to a raw sub-arc list (back-compat).
+render_goal_substream() {   # $1=goal dir  $2=goal-doc path
+  field() { grep -m1 -E "^$2:" "$1" 2>/dev/null | sed -E "s/^$2:[[:space:]]*//" || true; }
+  local gdir="$1" gdoc="$2" sub name st clo sup items row key arc rendered_keys=""
+  items="$(goal_item_keys "$gdoc")"
+  if [ -z "$items" ]; then                       # no checklist -> today's raw list
+    for sub in "$gdir"arcs/*/arc.md; do [ -f "$sub" ] &&
+      printf "      %-32s %-9s %s\n" "$(basename "$(dirname "$sub")")" "[$(field "$sub" status)]" "$(field "$sub" goal)"; done
+    return
+  fi
+  # per-item line: ✓ key → arc (closed sub-arc declares closes:key) | ○ key (open)
+  while IFS= read -r row; do
+    [ -n "$row" ] || continue
+    key="$(item_key "$row")"
+    rendered_keys="$rendered_keys $key"
+    arc="$(closing_arc_for "$gdir" "$key")"
+    if [ -n "$arc" ]; then printf "      ✓ %-30s → %s\n" "$key" "$arc"
+    else                   printf "      ○ %-30s\n"      "$key"; fi
+  done <<< "$items"
+  # non-closing sub-arcs (spikes / superseded) still list, with status + supersedes chain
+  for sub in "$gdir"arcs/*/arc.md; do [ -f "$sub" ] || continue
+    clo="$(read_closes "$sub")"
+    if [ -n "$clo" ]; then case " $rendered_keys " in *" $clo "*) continue ;; esac; fi
+    name=$(basename "$(dirname "$sub")"); st="$(field "$sub" status)"; sup="$(read_supersedes "$sub")"
+    printf "      %-32s %-9s %s\n" "$name" "[$st]" "${sup:+supersedes $sup}"
+  done
 }
 
 cmd_status() {
@@ -232,14 +339,15 @@ cmd_status() {
   if [ -d .arcs ]; then local on; on="$(rules_on | xargs || true)"; [ -n "$on" ] && echo "rules: $on"; fi
   [ -d "$b/arcs" ] || return 0
   echo "STREAM"
-  local d nm gdoc sub
+  local d nm gdoc badge
   for d in "$b"/arcs/*/; do [ -d "$d" ] || continue
     nm=$(basename "$d")
-    gdoc=$(ls "$d"*-goal.md 2>/dev/null | sort | tail -1 || true)   # a goal carries a versioned goal doc
+    gdoc=$(ls "$d"*-goal.md 2>/dev/null | sort | tail -1 || true)   # a goal carries a <slug>-goal.md
     if [ -n "$gdoc" ]; then
-      printf "  %-36s %-9s %s\n" "$nm" "[$(field "$gdoc" status)]" "$(field "$gdoc" goal)"
-      for sub in "$d"arcs/*/arc.md; do [ -f "$sub" ] &&
-        printf "      %-32s %-9s %s\n" "$(basename "$(dirname "$sub")")" "[$(field "$sub" status)]" "$(field "$sub" goal)"; done
+      badge=""
+      [ -n "$(goal_item_keys "$gdoc")" ] && badge="$(goal_progress_badge "$d" "$gdoc")"
+      printf "  %-36s %-9s %s%s\n" "$nm" "[$(field "$gdoc" status)]" "$(field "$gdoc" goal)" "${badge:+   ($badge)}"
+      render_goal_substream "$d" "$gdoc"
     elif [ -f "$d/arc.md" ]; then
       printf "  %-36s %-9s %s\n" "$nm" "[$(field "$d/arc.md" status)]" "$(field "$d/arc.md" goal)"
     fi
@@ -276,6 +384,7 @@ cmd_help() { sed -n '2,4p' "$0" | sed 's/^# \{0,1\}//'; cat <<EOF
   arcs new-goal <slug>              new goal (NN-@slug) in the shared .arcs/arcs/ stream
   arcs close [-g <goal>] [-f] <slug> mark an arc done: rename NN-slug -> __NN-slug__ (needs non-empty output/; -f overrides)
   arcs reopen [-g <goal>] <slug>    undo a close: __NN-slug__ -> NN-slug
+  arcs supersede [-g <goal>] <old> <new>  close old (no output guard) + create new linked by supersedes: + seed input/from-<old>
   arcs rule [list|on|off|add] ...   toggle behavior rules (global bodies, .arcs/config switch)
   arcs candidate <slug> [--from <arc>] [text]  capture a surfaced arc-candidate in .arcs/candidates/
   arcs candidate list               list candidates (also shown by arcs status)
@@ -421,6 +530,31 @@ cmd_promote() {   # turn a candidate into a real arc: create arc + move the file
   echo "arcs: promoted candidate '$base' → $dir/input/$base.md (removed from candidates/)"
 }
 
+cmd_supersede() {   # close <old> (no output guard) + create <new> in the same scope + link supersedes:
+  [ -d .arcs ] || die "no .arcs/ here"
+  local goal_slug="" old="" new=""
+  while [ $# -gt 0 ]; do case "$1" in
+    -g) goal_slug="${2:-}"; shift 2 ;;
+    *)  if [ -z "$old" ]; then old="$1"; elif [ -z "$new" ]; then new="$1"; fi; shift ;;
+  esac; done
+  [ -n "$old" ] && [ -n "$new" ] || die "usage: arcs supersede [-g <goal>] <old-slug> <new-slug>"
+  old="${old#__}"; old="${old%__}"               # refs are bare slugs; tolerate __…__
+  # 1. close <old> with -f (a superseded arc may legitimately carry no output)
+  if [ -n "$goal_slug" ]; then cmd_close -g "$goal_slug" -f "$old"; else cmd_close -f "$old"; fi
+  # 2. create <new> in the same scope (same goal substream, or the standalone stream)
+  if [ -n "$goal_slug" ]; then cmd_new_arc -g "$goal_slug" "$new"; else cmd_new_arc "$new"; fi
+  local sd dir; sd=$(_arc_searchdir "$goal_slug")
+  dir=$(ls -d "$sd"/[0-9][0-9]-"$new"/ 2>/dev/null | sort | tail -1); dir="${dir%/}"
+  [ -n "$dir" ] || die "could not locate the new arc for '$new'"
+  # 3. write supersedes: <old> (real field, after status:) — replaces the commented template line
+  local tmp; tmp="$(mktemp)"
+  sed -E "/^# supersedes:/d; s|^status:.*|&\nsupersedes: $old|" "$dir/arc.md" > "$tmp" && mv "$tmp" "$dir/arc.md"
+  # 4. seed input/from-<old>.md with a one-line pointer back to the superseded arc
+  printf '# from %s\n\nThis arc supersedes %s (closed). See __%s__/ for the predecessor.\n' \
+    "$old" "$old" "$old" > "$dir/input/from-$old.md"
+  echo "arcs: superseded $old → $(basename "$dir") (closed $old, supersedes: $old, seeded input/from-$old.md)"
+}
+
 # --- dispatch --------------------------------------------------------------
 sub="${1:-help}"; shift || true
 case "$sub" in
@@ -430,6 +564,7 @@ case "$sub" in
   new-goal)  cmd_new_goal "$@" ;;
   close)     cmd_close "$@" ;;
   reopen)    cmd_reopen "$@" ;;
+  supersede) cmd_supersede "$@" ;;
   rule)      cmd_rule "$@" ;;
   candidate) cmd_candidate "$@" ;;
   promote)   cmd_promote "$@" ;;

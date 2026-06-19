@@ -32,9 +32,9 @@ From the project root:
 cd my-project
 arcs init                         # creates .arcs/ + asks the arc language (en/ru/es)
 arcs lang ru                      # ...or set/change it explicitly, anytime
-arcs new-goal payments            # multi-arc work → .arcs/goals/01-payments/
+arcs new-goal payments            # multi-arc work → .arcs/arcs/NN-@payments/
 arcs new-arc -g payments stripe   # an arc inside the goal
-arcs new-arc spike-redis          # a standalone arc → .arcs/arcs/NN-...
+arcs new-arc spike-redis          # a standalone arc → .arcs/arcs/NN-spike-redis/
 arcs status                       # board: what's done, the bottleneck, and the language
 ```
 The language sets what arcs are written in (templates + the prose agents produce). Field keys

@@ -37,6 +37,13 @@ it's the **spine/log** of the work:
 - `output/` — a short result + **pointers** to what changed (files/PRs/commits) and the key decisions.
 - `arc.md` — goal + status (`active`→`done`), kept current.
 
+**`workspace/` is disposable thinking — it dies with the arc.** Two rules fall out of that:
+- If a workspace note ends up just restating `output/`, delete it — don't keep a second copy of the
+  conclusion. Workspace is scratch, not a duplicate of the result.
+- **Anything a later arc will consume must be an `output/` file, never a `workspace/` one.** If you find
+  yourself pointing a future arc at a workspace file, it wanted to be its own arc's output. Cross-arc
+  handoff goes through `output/` only.
+
 A coding task is done = code written AND the arc carries `output/` + `arc.md status: done`. You set
 that done-state by running `arcs close <slug>` (writes `status: done` and wraps the name in `__…__`:
 `NN-<slug>` → `__NN-<slug>__`, a goal `NN-@<slug>` → `__NN-@<slug>__`, so finished work is visible at a
@@ -49,8 +56,12 @@ goals directory; arcs and goals share continuous numbering in `.arcs/arcs/`.
 - **arc** — work with NO purpose: `NN-<slug>/` = `input/` → `workspace/` → `output/` (the outside reads
   ONLY `output/`) + `arc.md`. Encapsulation: anything the next step needs must be derivable from `output/` alone.
 - **goal** — an arc WITH a purpose: `NN-@<slug>/` (the `@` marks a goal). Same skeleton + its own nested
-  `arcs/` substream + a versioned status file `MM-<slug>-goal.md` (highest number = current; never edit
-  old versions, drop a new one).
+  `arcs/` substream + one immutable status file `<slug>-goal.md` (no version number). A goal is an
+  immutable contract: a `goal:` line + a `## Checklist`. Don't rewrite intent in place — when the aim
+  changes, `arcs supersede <old> <new>` closes the old and opens a new one linked by `supersedes:` (a
+  traceable chain). Checklist items stay `- [ ]`; **never hand-tick them** — done-state is computed from
+  sub-arcs that carry `closes: <item-key>` and rendered by `arcs status` as `N/M ✓` + `✓ <key> → <arc>`.
+  Keep `goal:` lines short — ≤12 words; push long framing into `## Where we are`.
 
 ## Candidates (surfaced future work)
 **THE RULE:** when an idea for FUTURE work surfaces mid-task, do NOT bury it in the current arc's
@@ -85,6 +96,7 @@ arcs new-arc -g <goal> <slug>  arc inside a goal's substream (one step)
 arcs new-arc <slug>            standalone arc: NN-<slug>/ (work with no purpose)
 arcs close [-g <goal>] <slug>  finish: status: done + wrap name in __…__ (refuses an empty output/; -f overrides)
 arcs reopen [-g <goal>] <slug> undo close: __…__ → unwrapped name, status back to active
+arcs supersede [-g <goal>] <old> <new>  aim changed: close <old> + open <new> linked by supersedes: (traceable chain)
 arcs candidate <slug> [--from <arc>]  capture a surfaced future-work idea into .arcs/candidates/
 arcs candidate list            list captured candidates
 arcs promote [-g <goal>] <slug>  candidate → real arc (creates it, moves the file into input/, drops from candidates/)

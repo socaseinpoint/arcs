@@ -44,13 +44,15 @@ Needs bash + grep/sed (macOS/Linux). No build step. Full guide: `docs/DEPLOY.md`
   arcs/                      one numbered stream — arcs and goals share the sequence
     NN-slug/                 atom: input → workspace → output (outward only via output) + arc.md
     NN-@slug/                a goal (@ marks it): an arc with a purpose + its own nested arcs/
-      NN-slug-goal.md        brief status, version = leading number (highest = current)
+      slug-goal.md           immutable status: a goal: line + a ## Checklist (no version number)
       input/ workspace/ output/ arcs/
     __NN-slug__/             a closed arc/goal (wrapped in __…__ = done)
   candidates/NN-slug.md      backlog of surfaced ideas, each with a from: line
   config                     lang= and rules= switches
 ```
-Surface from work → open the current `*-goal.md` → see where you are. Don't get lost.
+Surface from work → open the goal's `slug-goal.md` → see where you are. Don't get lost. A goal is
+immutable: aim changed → `arcs supersede <old> <new>` (a linked chain), never an in-place rewrite;
+checklist items tick themselves from sub-arcs' `closes:`, rendered by `arcs status`.
 An idea that pops up mid-work goes to `candidates/` so it isn't buried in a closed arc's
 `workspace/`; promote it later into a real arc's `input/`. Behavior **rules** have global bodies
 in `<repo>/rules/`, toggled per project via `rules=` in `.arcs/config`.
@@ -74,4 +76,4 @@ Three enforcement layers (wired by `install.sh`): the **skill** advises, **arcs-
 session/prompt, **arcs-gate** hard-blocks edits to project files until an arc is open. In a project
 without `.arcs/` nothing fires — `arcs init` is the opt-in.
 
-Landing (what & why, RU/EN): https://arcs-socaseinpoints-projects.vercel.app
+Landing (what & why, RU/EN): https://arcs-delta.vercel.app
