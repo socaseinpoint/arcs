@@ -56,7 +56,7 @@ goals directory; arcs and goals share continuous numbering in `.arcs/arcs/`.
 - **arc** — work with NO purpose: `NN-<slug>/` = `input/` → `workspace/` → `output/` (the outside reads
   ONLY `output/`) + `arc.md`. Encapsulation: anything the next step needs must be derivable from `output/` alone.
 - **goal** — an arc WITH a purpose: `NN-@<slug>/` (the `@` marks a goal). Same skeleton + its own nested
-  `arcs/` substream + one immutable status file `<slug>-goal.md` (no version number). A goal is an
+  `arcs/` substream + one immutable status file `<slug>-goal.md`. A goal is an
   immutable contract: a `goal:` line + a `## Checklist`. Don't rewrite intent in place — when the aim
   changes, `arcs supersede <old> <new>` closes the old and opens a new one linked by `supersedes:` (a
   traceable chain). Checklist items stay `- [ ]`; **never hand-tick them** — done-state is computed from

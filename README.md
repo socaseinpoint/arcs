@@ -44,7 +44,7 @@ Needs bash + grep/sed (macOS/Linux). No build step. Full guide: `docs/DEPLOY.md`
   arcs/                      one numbered stream — arcs and goals share the sequence
     NN-slug/                 atom: input → workspace → output (outward only via output) + arc.md
     NN-@slug/                a goal (@ marks it): an arc with a purpose + its own nested arcs/
-      slug-goal.md           immutable status: a goal: line + a ## Checklist (no version number)
+      slug-goal.md           immutable status: a goal: line + a ## Checklist
       input/ workspace/ output/ arcs/
     __NN-slug__/             a closed arc/goal (wrapped in __…__ = done)
   candidates/NN-slug.md      backlog of surfaced ideas, each with a from: line

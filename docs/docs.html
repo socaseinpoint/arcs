@@ -4,11 +4,11 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>arcs — documentation</title>
-<meta name="description" content="The full arcs mental model: concepts, lifecycle, immutable Goals v2 with computed checklists and supersession chains, the rules layer, candidates, the full command reference, install, and a worked example." />
+<meta name="description" content="The full arcs mental model: concepts, lifecycle, immutable goals with computed checklists and supersession chains, the rules layer, candidates, the full command reference, install, and a worked example." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="style.css?v=6" />
+<link rel="stylesheet" href="style.css?v=7" />
 </head>
 <body class="docs">
 
@@ -19,7 +19,7 @@
       <span class="nav-links">
         <a href="index.html">home</a>
         <a href="#concepts">concepts</a>
-        <a href="#goals">goals v2</a>
+        <a href="#goals">goals</a>
         <a href="#commands">commands</a>
         <a href="#setup">setup</a>
       </span>
@@ -39,7 +39,7 @@
           <li><a href="#what">What &amp; why</a></li>
           <li><a href="#concepts">Concepts</a></li>
           <li><a href="#lifecycle">Lifecycle</a></li>
-          <li><a href="#goals">Goals v2</a></li>
+          <li><a href="#goals">Goals</a></li>
           <li><a href="#rules">Rules layer</a></li>
           <li><a href="#candidates">Candidates</a></li>
           <li><a href="#commands">Command reference</a></li>
@@ -181,13 +181,13 @@
       </p>
     </section>
 
-    <!-- GOALS V2 -->
+    <!-- GOALS -->
     <section id="goals" class="docs-section reveal">
-      <h2><span class="sec-num mono">04</span> Goals v2 — the immutable contract</h2>
+      <h2><span class="sec-num mono">04</span> Goals — the immutable contract</h2>
       <p>
-        A goal is the newest and most important idea in arcs. Its intent <b>does not get edited in place.</b>
-        The doc is a <code>goal:</code> line plus a <code>## Checklist</code>, and it carries <b>no version
-        number</b> — one <code>&lt;slug&gt;-goal.md</code> per goal. Two rules follow from immutability.
+        A goal is the most important idea in arcs. Its intent <b>does not get edited in place.</b>
+        The doc is a <code>goal:</code> line plus a <code>## Checklist</code> — one
+        <code>&lt;slug&gt;-goal.md</code> per goal. Two rules follow from immutability.
       </p>
 
       <h3>1 · Immutable intent → supersession chains</h3>
@@ -213,9 +213,9 @@
         moves.
       </p>
 
-      <h3>2 · No version number → a computed checklist</h3>
+      <h3>2 · A computed checklist</h3>
       <p>
-        Instead of a version axis, a goal carries a <code>## Checklist</code>. Each item has a <b>stable
+        A goal carries a <code>## Checklist</code>. Each item has a <b>stable
         key</b>, resolved in this order:
       </p>
       <ol class="ordered">
@@ -239,8 +239,8 @@
       <p>
         <code>N/M ✓</code> on the goal line, then <code>✓ &lt;key&gt; → &lt;arc&gt;</code> for closed items and
         <code>○ &lt;key&gt;</code> for open ones, plus any non-closing or superseded sub-arcs listed with their
-        status. A goal with <b>no</b> <code>## Checklist</code> falls back to a raw sub-arc list
-        (back-compat). The goal doc answers, briefly: the goal, the checklist, and where you are globally —
+        status. A goal that hasn't defined any <code>## Checklist</code> items just lists its sub-arcs.
+        The goal doc answers, briefly: the goal, the checklist, and where you are globally —
         re-open it after a deep dive and you instantly see "you are here."
       </p>
     </section>

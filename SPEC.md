@@ -88,7 +88,7 @@ name marks it a goal — folder `arcs/NN-@<slug>/`:
 
 | | Role |
 |---|---|
-| `<slug>-goal.md` | **goal + "what's done / where we are"**, briefly. One immutable doc — no version number. |
+| `<slug>-goal.md` | **goal + "what's done / where we are"**, briefly. One immutable doc per goal. |
 | `input/` | what entered the goal — seed, context, requirements (like an arc) |
 | `workspace/` | helper files for the goal (method, drafts) |
 | `output/` | **self-contained** final deliverable, once the goal closes (like an arc) |
@@ -98,8 +98,8 @@ Arc vs goal: a goal is an arc with a purpose — `@` in its name, a nested `arcs
 status doc. Encapsulation is the same: outward only through `output/`.
 
 ### A goal is an immutable contract
-A goal's intent doesn't get edited in place. The doc is a `goal:` line plus a `## Checklist`, and
-it carries no version number — one `<slug>-goal.md` per goal. Two rules follow:
+A goal's intent doesn't get edited in place. The doc is a `goal:` line plus a `## Checklist` —
+one `<slug>-goal.md` per goal. Two rules follow:
 
 **1. Immutable intent → supersession chains.** When the *aim* changes (not a wording fix — a real
 change of meaning), you don't rewrite the goal. You close the old one and open a NEW one that carries
@@ -116,7 +116,7 @@ back. Both stay on disk, linked — it's a pivot you can trace, not a rename. Re
 move applies to a goal whose aim shifts. Clarifying edits are still fine in place; supersede only when
 the meaning moves.
 
-**2. No version number → an arc-derived checklist.** Instead of a leading `MM` version axis, a goal
+**2. An arc-derived checklist.** A goal
 carries a `## Checklist` of items. Each item has a **stable key** — an explicit `{#key}`, else the
 leading slug-token of a `<key> — <description>` line, else a slug of the whole text. Keys are slugs,
 never "step N" (numbers shift when you insert an item).
@@ -133,8 +133,8 @@ an item carries `closes: <item-key>`, and `arcs status` renders the result —
 ```
 
 `N/M ✓` on the goal line, then `✓ <key> → <arc>` for closed items and `○ <key>` for open ones, plus
-any non-closing or superseded sub-arcs listed with their status. A goal with **no** `## Checklist`
-falls back to today's raw sub-arc list (back-compat). The goal doc still answers briefly: the goal,
+any non-closing or superseded sub-arcs listed with their status. A goal that hasn't defined any
+`## Checklist` items just lists its sub-arcs. The goal doc still answers briefly: the goal,
 the checklist, and where I am globally.
 
 ---

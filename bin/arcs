@@ -162,7 +162,7 @@ EOF
   esac
 }
 
-goal_md() {    # $1=path $2=slug $3=lang  (one immutable <slug>-goal.md — no MM- version prefix)
+goal_md() {    # $1=path $2=slug $3=lang  (one immutable <slug>-goal.md per goal)
   case "${3:-en}" in
     ru) cat > "$1/$2-goal.md" <<EOF
 # $2-goal — <цель>
@@ -270,7 +270,7 @@ cmd_new_goal() {
   nn=$(next_num "$b/arcs")          # shared numbering with standalone arcs
   dir="$b/arcs/$nn-@$slug"          # @ marks a goal (arc with a purpose) in the stream
   mkdir -p "$dir"/{input,workspace,output,arcs}
-  goal_md "$dir" "$slug" "$lang"        # one immutable <slug>-goal.md (no version prefix)
+  goal_md "$dir" "$slug" "$lang"        # one immutable <slug>-goal.md per goal
   echo "arcs: created $dir (goal — input/workspace/output/arcs + $slug-goal.md, lang=$lang)"
 }
 
@@ -304,7 +304,7 @@ goal_progress_badge() {   # $1=goal dir  $2=goal-doc path -> "N/M ✓" over chec
 }
 
 # Render a goal's sub-stream. $1=goal dir. Uses checklist (computed from sub-arcs' closes:)
-# when the goal doc carries a ## Checklist; else falls back to a raw sub-arc list (back-compat).
+# when the goal doc carries a ## Checklist; else just lists the goal's sub-arcs.
 render_goal_substream() {   # $1=goal dir  $2=goal-doc path
   field() { grep -m1 -E "^$2:" "$1" 2>/dev/null | sed -E "s/^$2:[[:space:]]*//" || true; }
   local gdir="$1" gdoc="$2" sub name st clo sup items row key arc rendered_keys=""
