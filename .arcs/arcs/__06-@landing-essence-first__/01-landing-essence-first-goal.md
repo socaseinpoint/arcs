@@ -1,7 +1,7 @@
 # 01-landing-essence-first-goal — essence-first landing
 
 goal: rebuild the arcs landing so a visitor gets the payoff + how-to-start instantly, agent benefit foregrounded (honestly), spec demoted
-status: active
+status: done
 version: 01 (highest number = current)
 
 ## Where we are
