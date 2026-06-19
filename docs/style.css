@@ -54,7 +54,9 @@ code { font-family: var(--mono); font-size: 0.85em; color: var(--ink); }
 }
 
 /* ---------- nav ---------- */
-header {
+/* the SITE nav only (direct child of body) — NOT the nested .docs-head hero,
+   which is also a <header> and must never be sticky. */
+body > header {
   position: sticky; top: 0; z-index: 20;
   backdrop-filter: blur(10px);
   background: rgba(10, 10, 10, 0.72);
@@ -62,7 +64,7 @@ header {
 }
 /* mobile: solid header so content never ghosts through the sticky bar while scrolling */
 @media (max-width: 760px) {
-  header { background: var(--bg); backdrop-filter: none; }
+  body > header { background: var(--bg); backdrop-filter: none; }
 }
 .nav { display: flex; align-items: center; justify-content: space-between; height: 60px; gap: 1rem; }
 .brand { font-family: var(--mono); font-weight: 500; letter-spacing: 0.04em; font-size: 0.95rem; white-space: nowrap; }

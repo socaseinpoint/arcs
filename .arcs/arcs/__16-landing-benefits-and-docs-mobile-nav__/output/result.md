@@ -73,3 +73,11 @@ the collapsed nav was still a second sticky bar stacked under it. Fixed:
   content top and scrolls away; only the header stays sticky.
 - cache-bust `?v=4` → `?v=5` on both HTML pages.
 Verified @375px scrolled: header `rgb(10,10,10)` opaque, docs-nav scrolled off (rectTop -734), top reads clean.
+
+## Follow-up (round 3 — the actual root cause)
+The "still huge / ghosting at top" was NOT the nav: `docs.html` has TWO `<header>` elements —
+the site nav AND the hero (`<header class="docs-head">`). The broad `header { position: sticky }`
+rule stuck the HUGE hero to the top too, so content scrolled under it (ghost) and it stayed big.
+Fix: scoped the sticky rule to `body > header` (the site nav only; the nested `.docs-head` is now
+static). Cache-bust `?v=5` → `?v=6`. Verified @390px: `.docs-head` position=static, hero scrolls
+away, only the slim opaque nav stays — top reads clean.
