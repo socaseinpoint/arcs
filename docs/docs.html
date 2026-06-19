@@ -186,7 +186,7 @@
       <h2><span class="sec-num mono">04</span> Goals — the immutable contract</h2>
       <p>
         A goal is the most important idea in arcs. Its intent <b>does not get edited in place.</b>
-        The doc is a <code>goal:</code> line plus a <code>## Checklist</code> — one
+        The doc is a <code>goal:</code> line plus a short "where we are" — one
         <code>&lt;slug&gt;-goal.md</code> per goal. Two rules follow from immutability.
       </p>
 
@@ -213,34 +213,25 @@
         moves.
       </p>
 
-      <h3>2 · A computed checklist</h3>
+      <h3>2 · The checklist <em>is</em> the sub-arcs</h3>
       <p>
-        A goal carries a <code>## Checklist</code>. Each item has a <b>stable
-        key</b>, resolved in this order:
-      </p>
-      <ol class="ordered">
-        <li>an explicit <code>{#key}</code> on the line wins;</li>
-        <li>else the leading slug-token of a <code>&lt;key&gt; — &lt;description&gt;</code> line;</li>
-        <li>else a slug of the whole item text.</li>
-      </ol>
-      <p>
-        Keys are slugs, never "step N" — numbers shift when you insert an item. The doc always stores items
-        as <code>- [ ]</code>. <b>Done-state is never hand-ticked</b> — hand-marking reintroduces the drift
-        the method exists to kill. It is <b>computed</b>: a sub-arc that finishes an item carries
-        <code>closes: &lt;item-key&gt;</code>, and <code>arcs status</code> renders the result.
+        A goal has no separate <code>## Checklist</code> block. Its items <b>are</b> its sub-arcs: planning a
+        goal means opening its sub-arcs up front (each an open <code>NN-&lt;slug&gt;/</code>), and an item is
+        <b>done when its sub-arc is closed</b> (<code>__…__</code>). Nothing is hand-ticked — done-state is
+        the folder state, read straight from disk. That kills a whole class of drift a hand-authored item
+        list invites (a mistyped key, a dotted key that won't match).
       </p>
       <figure>
-        <div class="figcap"><span>$ arcs status</span><span>computed done-state</span></div>
+        <div class="figcap"><span>$ arcs status</span><span>progress read from disk</span></div>
 <pre>  02-@&lt;goal&gt;                    <span class="a">[active]</span>  &lt;goal line&gt;   <span class="a">(1/3 ✓)</span>
-      ✓ &lt;item-key&gt;                  <span class="a">→ &lt;arc that closed it&gt;</span>
-      ○ &lt;item-key&gt;
-      ○ &lt;item-key&gt;</pre>
+      ✓ 01-&lt;done-sub-arc&gt;           <span class="a">&lt;its goal line&gt;</span>
+      ○ 02-&lt;open-sub-arc&gt;           <span class="a">[active]  &lt;its goal line&gt;</span>
+      ○ 03-&lt;open-sub-arc&gt;           <span class="a">[active]  &lt;its goal line&gt;</span></pre>
       </figure>
       <p>
-        <code>N/M ✓</code> on the goal line, then <code>✓ &lt;key&gt; → &lt;arc&gt;</code> for closed items and
-        <code>○ &lt;key&gt;</code> for open ones, plus any non-closing or superseded sub-arcs listed with their
-        status. A goal that hasn't defined any <code>## Checklist</code> items just lists its sub-arcs.
-        The goal doc answers, briefly: the goal, the checklist, and where you are globally —
+        <code>N/M ✓</code> (closed sub-arcs / total) on the goal line, then <code>✓</code> for each closed
+        sub-arc and <code>○</code> for each open one; a superseded sub-arc shows its <code>supersedes</code>
+        link. The goal doc answers, briefly: the goal and where you are globally —
         re-open it after a deep dive and you instantly see "you are here."
       </p>
     </section>
@@ -315,7 +306,7 @@
       <p>The full set, exactly as <code>bin/arcs</code> dispatches them. In normal use the <b>agent</b> runs
         these — you describe the work in Claude Code and it opens, works, and closes arcs for you;
         <code>arcs status</code> is the one a human might run to peek at the board. Field keys
-        (<code>goal:</code>, <code>status:</code>, <code>closes:</code>, <code>supersedes:</code>) stay
+        (<code>goal:</code>, <code>status:</code>, <code>supersedes:</code>) stay
         English so the tooling is language-agnostic.</p>
       <div class="table-wrap">
         <table>
@@ -477,8 +468,9 @@ cd ~/arcs &amp;&amp; ./install.sh
     <section id="example" class="docs-section reveal">
       <h2><span class="sec-num mono">09</span> Worked example</h2>
       <p>
-        A tiny project from <code>examples/basic/</code>: one stream holding a throwaway arc and a goal with
-        a checklist. Watch a sub-arc close one checklist item and the board compute <code>1/3 ✓</code>.
+        A tiny project from <code>examples/basic/</code>: one stream holding a throwaway arc and a goal
+        whose checklist <em>is</em> its sub-arcs. Watch one sub-arc close and the board compute
+        <code>1/3 ✓</code> from disk.
       </p>
       <figure>
         <div class="figcap"><span>examples/basic/.arcs/</span><span>the tree</span></div>
@@ -488,37 +480,38 @@ cd ~/arcs &amp;&amp; ./install.sh
       arc.md
       output/verdict.md             <span class="a">← the public interface (self-contained)</span>
     02-@newsletter/                 <span class="c"># goal — an arc WITH a purpose (@ marks it)</span>
-      newsletter-goal.md            <span class="c"># immutable: goal line + checklist + where we are</span>
-      arcs/
-        __01-research__/            <span class="c"># done sub-arc — carries closes: research-stories</span>
+      newsletter-goal.md            <span class="c"># immutable: goal line + where we are</span>
+      arcs/                         <span class="c"># the goal's checklist IS this stream of sub-arcs</span>
+        __01-research__/            <span class="c"># done sub-arc (closed __…__) = a ticked item</span>
           arc.md
           input/sources.md          <span class="c"># what came in</span>
           output/shortlist.md       <span class="a">← what the next arc reads (and ONLY this)</span>
+        02-draft/                   <span class="c"># open sub-arc = an unchecked item</span>
+        03-ship/                    <span class="c"># open sub-arc = an unchecked item</span>
   candidates/
     01-add-rss-feed.md              <span class="c"># surfaced from 02-@newsletter, not started</span></pre>
       </figure>
-      <p>The goal doc holds the checklist; <code>01-research</code> carries
-        <code>closes: research-stories</code>, so the board ticks that item — computed, never hand-marked:</p>
+      <p>The checklist is just the sub-arcs; <code>__01-research__</code> is closed, so the board ticks it —
+        progress computed from disk, never hand-marked:</p>
       <figure>
         <div class="figcap"><span>$ arcs status</span><span>the board</span></div>
 <pre>STREAM
   __01-spike-vite__                  <span class="a">[done]</span>    check whether Vite 6 breaks our PostCSS setup
   02-@newsletter                     <span class="a">[active]</span>  ship issue #1 of a weekly dev newsletter   <span class="a">(1/3 ✓)</span>
-      ✓ research-stories             <span class="a">→ 01-research</span>
-      ○ draft-issue
-      ○ ship-issue
+      ✓ 01-research                  <span class="a">gather candidate stories for issue #1</span>
+      ○ 02-draft                     <span class="a">[active]  write the issue copy from the shortlist</span>
+      ○ 03-ship                      <span class="a">[active]  send issue #1</span>
 
 CANDIDATES (surfaced arc-candidates — promote with: arcs promote &lt;slug&gt;)
   01-add-rss-feed                    <span class="a">from 02-@newsletter</span></pre>
       </figure>
       <p class="dim">
-        End to end: <code>arcs init</code> → <code>arcs new-goal newsletter</code> → add a
-        <code>## Checklist</code> to <code>newsletter-goal.md</code> →
-        <code>arcs new-arc -g newsletter research-stories</code>, set <code>closes: research-stories</code>
-        in its <code>arc.md</code>, write <code>output/shortlist.md</code> →
-        <code>arcs close -g newsletter research-stories</code>. The next <code>arcs status</code> shows
-        <code>1/3 ✓</code>. The drafting arc reads only <code>__01-research__/output/shortlist.md</code> —
-        never its workspace.
+        End to end: <code>arcs init</code> → <code>arcs new-goal newsletter</code> → open the items as
+        sub-arcs: <code>arcs new-arc -g newsletter research</code>, <code>… draft</code>, <code>… ship</code>
+        → work the first, write <code>output/shortlist.md</code> →
+        <code>arcs close -g newsletter research</code>. The next <code>arcs status</code> shows
+        <code>1/3 ✓</code> — read straight from disk. The drafting arc reads only
+        <code>__01-research__/output/shortlist.md</code> — never its workspace.
       </p>
     </section>
 

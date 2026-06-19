@@ -6,6 +6,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-06-19
+
+### Changed
+- **A goal's checklist is now its sub-arcs (model B).** The `## Checklist` block and the
+  `closes:` field are gone. An item *is* a sub-arc; it's done when the sub-arc is closed
+  (`__…__`). `arcs status` computes `N/M ✓` (closed / total sub-arcs) and the per-item ✓/○
+  lines straight from disk — no item keys, no slug matching, no hand-ticking. This removes the
+  whole class of key-matching drift (the dotted-key bug from 0.3.1, the typo-no-op) at the
+  root: there is no key left to mistype. Plan a goal by opening its sub-arcs up front
+  (`arcs new-arc -g <goal> <item>`); closing each ticks it.
+
+### Removed
+- The `## Checklist` block from the goal template and the `# closes:` line from the arc
+  template. Internal `slugify` / `read_closes` / `goal_item_keys` / `closing_arc_for` /
+  `item_key` helpers — the key-matching machinery they served no longer exists.
+
+### Compatibility
+- **Not a hard break; `MIN_VERSION` unchanged.** Old goals that still carry a `## Checklist` +
+  `closes:` keep working: the reader ignores the now-unknown block and renders their sub-arcs,
+  with progress recomputed from the sub-arcs on disk. No migration is required — closed
+  historical goals are left untouched.
+
 ## [0.3.2] - 2026-06-18
 
 ### Added
@@ -124,7 +146,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `arcs update` — one-command self-update (git pull + re-wire skill/hooks).
 - Bilingual (RU/EN) landing page and `examples/basic` walkthrough.
 
-[Unreleased]: https://github.com/socaseinpoint/arcs/compare/v0.3.2...HEAD
+[Unreleased]: https://github.com/socaseinpoint/arcs/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/socaseinpoint/arcs/compare/v0.3.2...v0.4.0
 [0.3.2]: https://github.com/socaseinpoint/arcs/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/socaseinpoint/arcs/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/socaseinpoint/arcs/compare/v0.2.0...v0.3.0

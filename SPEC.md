@@ -44,14 +44,12 @@ Work without a purpose. One finished chunk. Folder `NN-<slug>/` in the stream (n
 # NN-<slug>
 goal:   <one line — what we close>
 status: active | blocked | done
-closes:     <parent-goal checklist-item key this arc completes>   ← if it's a sub-arc of a goal
 supersedes: <slug of the arc this one replaces>                   ← if it pivots from an earlier arc
 ## output → pointers
 - `output/...` — what goes outward
 ```
-`closes:` ties a sub-arc to a **stable checklist-item key** (a slug, not a step number — numbers
-shift when you insert). `supersedes:` records the arc this one replaced (`prev:` is read as an alias).
-Both are optional; the template ships them commented.
+`supersedes:` records the arc this one replaced (`prev:` is read as an alias). Optional; the
+template ships it commented.
 Everything else (how, flow, notes, iterations) → `workspace/`.
 
 **Lifecycle (the rhythm):**
@@ -98,8 +96,8 @@ Arc vs goal: a goal is an arc with a purpose — `@` in its name, a nested `arcs
 status doc. Encapsulation is the same: outward only through `output/`.
 
 ### A goal is an immutable contract
-A goal's intent doesn't get edited in place. The doc is a `goal:` line plus a `## Checklist` —
-one `<slug>-goal.md` per goal. Two rules follow:
+A goal's intent doesn't get edited in place. The doc is a `goal:` line plus a short "where we
+are" — one `<slug>-goal.md` per goal. Two rules follow:
 
 **1. Immutable intent → supersession chains.** When the *aim* changes (not a wording fix — a real
 change of meaning), you don't rewrite the goal. You close the old one and open a NEW one that carries
@@ -116,26 +114,25 @@ back. Both stay on disk, linked — it's a pivot you can trace, not a rename. Re
 move applies to a goal whose aim shifts. Clarifying edits are still fine in place; supersede only when
 the meaning moves.
 
-**2. An arc-derived checklist.** A goal
-carries a `## Checklist` of items. Each item has a **stable key** — an explicit `{#key}`, else the
-leading slug-token of a `<key> — <description>` line, else a slug of the whole text. Keys are slugs,
-never "step N" (numbers shift when you insert an item).
+**2. The checklist IS the sub-arcs.** A goal has no separate `## Checklist` block. Its items
+*are* its sub-arcs: planning a goal means opening its sub-arcs up front (each an open
+`NN-<slug>/`), and an item is **done when its sub-arc is closed** (`__…__`). Nothing is
+hand-ticked — done-state is the folder state, read straight from disk. This kills a whole class
+of drift that a hand-authored item list invites (a mistyped key, a dotted key that won't match).
 
-The doc always stores items as `- [ ]`. **Done-state is never hand-ticked** — hand-marking
-reintroduces the drift the method exists to kill. Instead it's **computed**: a sub-arc that finishes
-an item carries `closes: <item-key>`, and `arcs status` renders the result —
+`arcs status` renders it — `N/M ✓` (closed sub-arcs / total) on the goal line, then one line per
+sub-arc:
 
 ```
 02-@<goal>                    [active]  <goal line>   (1/3 ✓)
-      ✓ <item-key>                  → <arc that closed it>
-      ○ <item-key>
-      ○ <item-key>
+      ✓ 01-<done-sub-arc>           <its goal line>
+      ○ 02-<open-sub-arc>           [active]  <its goal line>
+      ○ 03-<open-sub-arc>           [active]  <its goal line>
 ```
 
-`N/M ✓` on the goal line, then `✓ <key> → <arc>` for closed items and `○ <key>` for open ones, plus
-any non-closing or superseded sub-arcs listed with their status. A goal that hasn't defined any
-`## Checklist` items just lists its sub-arcs. The goal doc still answers briefly: the goal,
-the checklist, and where I am globally.
+`✓` for a closed sub-arc, `○` for an open one; a superseded sub-arc shows its `supersedes` link.
+An item whose aim changes isn't re-ticked — `arcs supersede` swaps the sub-arc and the new one
+takes its place. The goal doc still answers briefly: the goal, and where I am globally.
 
 ---
 
@@ -213,8 +210,8 @@ encapsulation.
 ## Invariants
 - `output/` contains no fact/claim not grounded in `input/` or the process.
 - `workspace/` is disposable: any artifact is re-generable; never hand-tweak the final in `output/` outside the process.
-- `arc.md` / `<slug>-goal.md` is the single source of status. A goal's checklist done-state is
-  computed from sub-arcs' `closes:`, not hand-written — `arcs status` is the canonical view.
+- `arc.md` / `<slug>-goal.md` is the single source of status. A goal's progress is computed from
+  its sub-arcs' closed-state on disk, not hand-written — `arcs status` is the canonical view.
 - Numbering is **one continuous stream across arcs AND goals** in a given `arcs/`. It counts every
   entry — open arcs `NN-*`, open goals `NN-@*`, and closed `__…__` of either kind. Closing renames but
   never frees a number; an arc and a goal never reuse one. (A goal's nested `arcs/` is its own local
