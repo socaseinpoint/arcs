@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-06-18
+
 ### Fixed
 - **Dotted checklist keys now match `closes:`.** A checklist key containing dots (e.g.
   `cut-release-0.2.0`) was never recognized: the key-extraction regex rejected `.`, so the whole item
@@ -105,6 +107,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `arcs update` — one-command self-update (git pull + re-wire skill/hooks).
 - Bilingual (RU/EN) landing page and `examples/basic` walkthrough.
 
-[Unreleased]: https://github.com/socaseinpoint/arcs/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/socaseinpoint/arcs/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/socaseinpoint/arcs/compare/v0.3.0...v0.3.1
+[0.3.0]: https://github.com/socaseinpoint/arcs/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/socaseinpoint/arcs/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/socaseinpoint/arcs/releases/tag/v0.1.0
