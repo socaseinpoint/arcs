@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Dotted checklist keys now match `closes:`.** A checklist key containing dots (e.g.
+  `cut-release-0.2.0`) was never recognized: the key-extraction regex rejected `.`, so the whole item
+  text got slugified instead, and `closes:` was compared raw with no shared normalization — so the
+  item always read as unclosed (`0/1 ✓`). The key regex now allows dots, and both sides of the
+  match are slugified, so dot/dash representation drift round-trips
+  (`cut-release-0.2.0` ↔ `cut-release-0-2-0`). Found dogfooding the 0.2.0 release.
+
 ### Changed
 - **Landing payoff + first move.** `docs/index.html` gains a before→after "wow" band (a cold session
   days later: re-explain-and-redo vs. one-word `continue` that resumes from `.arcs/`) and a concrete

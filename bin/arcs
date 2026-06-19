@@ -100,7 +100,7 @@ goal_item_keys() {   # $1=goal-doc path -> one "key<TAB>text" per checklist item
         head=line
         sub(/[[:space:]]*(—|–|--|-)[[:space:]].*/, "", head)
         sub(/[[:space:]]+$/, "", head)
-        if (head ~ /^[A-Za-z0-9][A-Za-z0-9-]*$/) key=head
+        if (head ~ /^[A-Za-z0-9][A-Za-z0-9.-]*$/) key=head   # dots allowed (e.g. 0.2.0); spaces still reject
       }                                                  # 3. else: empty -> caller slugifies whole text
       text=line
       gsub(/\{#[^}]+\}/, "", text)
@@ -277,8 +277,9 @@ cmd_new_goal() {
 # bash 3.2 (macOS) — no associative arrays. Find the CLOSED sub-arc that closes a given key.
 closing_arc_for() {   # $1=goal dir  $2=item-key -> bare slug of the closed sub-arc declaring closes:<key>, or empty
   local gdir="$1" key="$2" sub name
+  local nkey; nkey="$(slugify "$key")"   # normalize so dot/dash drift round-trips (cut-release-0.2.0 == cut-release-0-2-0)
   for sub in "$gdir"arcs/__[0-9][0-9]-*__/arc.md; do [ -f "$sub" ] || continue
-    [ "$(read_closes "$sub")" = "$key" ] || continue
+    [ "$(slugify "$(read_closes "$sub")")" = "$nkey" ] || continue
     name=$(basename "$(dirname "$sub")"); name="${name#__}"; name="${name%__}"
     echo "$name"; return
   done
@@ -318,14 +319,14 @@ render_goal_substream() {   # $1=goal dir  $2=goal-doc path
   while IFS= read -r row; do
     [ -n "$row" ] || continue
     key="$(item_key "$row")"
-    rendered_keys="$rendered_keys $key"
+    rendered_keys="$rendered_keys $(slugify "$key")"   # store normalized for dedup vs closes:
     arc="$(closing_arc_for "$gdir" "$key")"
     if [ -n "$arc" ]; then printf "      ✓ %-30s → %s\n" "$key" "$arc"
     else                   printf "      ○ %-30s\n"      "$key"; fi
   done <<< "$items"
   # non-closing sub-arcs (spikes / superseded) still list, with status + supersedes chain
   for sub in "$gdir"arcs/*/arc.md; do [ -f "$sub" ] || continue
-    clo="$(read_closes "$sub")"
+    clo="$(slugify "$(read_closes "$sub")")"
     if [ -n "$clo" ]; then case " $rendered_keys " in *" $clo "*) continue ;; esac; fi
     name=$(basename "$(dirname "$sub")"); st="$(field "$sub" status)"; sup="$(read_supersedes "$sub")"
     printf "      %-32s %-9s %s\n" "$name" "[$st]" "${sup:+supersedes $sup}"
