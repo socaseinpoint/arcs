@@ -63,3 +63,13 @@ Before = repo HEAD (port 8766), after = working tree (port 8765).
 - `docs-mobile-375-after-closed.png` / `-after-open.png` — collapsed line / opened panel.
 - `docs-mobile-320-after-closed.png` — 320px collapsed.
 - `landing-start-section.png`, `landing-tree.png`, `landing-desktop-full.png` — restored benefits.
+
+## Follow-up (mobile nav, round 2)
+User's Safari screenshot showed ghosting at the top: the glass header
+(`rgba(10,10,10,0.72)` + blur) let content bleed through while scrolling, and
+the collapsed nav was still a second sticky bar stacked under it. Fixed:
+- `style.css` — header is now SOLID (`var(--bg)`, no blur) at ≤760px → no ghost bleed.
+- `style.css` — `.docs-nav` is `position: static` at ≤880px → the collapsed line sits at the
+  content top and scrolls away; only the header stays sticky.
+- cache-bust `?v=4` → `?v=5` on both HTML pages.
+Verified @375px scrolled: header `rgb(10,10,10)` opaque, docs-nav scrolled off (rectTop -734), top reads clean.

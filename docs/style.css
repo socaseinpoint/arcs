@@ -60,6 +60,10 @@ header {
   background: rgba(10, 10, 10, 0.72);
   border-bottom: 1px solid var(--line);
 }
+/* mobile: solid header so content never ghosts through the sticky bar while scrolling */
+@media (max-width: 760px) {
+  header { background: var(--bg); backdrop-filter: none; }
+}
 .nav { display: flex; align-items: center; justify-content: space-between; height: 60px; gap: 1rem; }
 .brand { font-family: var(--mono); font-weight: 500; letter-spacing: 0.04em; font-size: 0.95rem; white-space: nowrap; }
 .brand b { color: var(--accent); font-weight: 500; }
@@ -201,8 +205,10 @@ body.docs { scroll-padding-top: 80px; }
 summary.docs-nav-label { cursor: default; }
 
 @media (max-width: 880px) {
+  /* mobile: collapsed line sits at the top of the content and scrolls away —
+     no second sticky bar stacking under the header (that read as a crooked block). */
   .docs-nav {
-    position: sticky; top: 60px; z-index: 10;
+    position: static; top: auto; z-index: auto;
     border: 1px solid var(--line); background: var(--bg-soft);
   }
   /* collapsed disclosure: a single tappable line until opened */
