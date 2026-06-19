@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="style.css?v=7" />
+<link rel="stylesheet" href="style.css?v=8" />
 </head>
 <body>
 
@@ -41,6 +41,33 @@
         <a href="#start" class="bracket bracket--primary">[ get started → ]</a>
         <a href="docs.html" class="bracket">[ read the docs ]</a>
         <a href="https://github.com/socaseinpoint/arcs" target="_blank" rel="noopener" class="bracket">[ github ↗ ]</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- BEFORE → AFTER — the wow -->
+  <section class="contrast">
+    <div class="wrap reveal">
+      <p class="band-head">§ 00b — the moment it pays off · a cold session, days later</p>
+      <div class="contrast-grid">
+        <div class="cc">
+          <span class="tag">without arcs</span>
+          <h3>New session, cold. The work is gone.</h3>
+<pre class="scene"><span class="k">you →</span> "continue the checkout work"
+<span class="k">agent →</span> "which checkout work?"  <span class="c"># chat scrolled away</span>
+<span class="k">you →</span> re-explain it all, paste old code…
+<span class="k">agent →</span> re-discovers, redoes, quietly drifts</pre>
+          <p class="takeaway">Every handoff restarts from zero. The context lived in the chat — and the chat is gone.</p>
+        </div>
+        <div class="cc relief">
+          <span class="tag">with arcs</span>
+          <h3>New session, cold. It <em>just resumes</em>.</h3>
+<pre class="scene"><span class="k">you →</span> "continue"
+<span class="a">agent →</span> reads <span class="a">.arcs/</span> → 02-@payments · sub-arc 01-stripe · mid-workspace
+<span class="a">agent →</span> picks up exactly where it stopped
+<span class="c"># nothing re-explained, nothing redone</span></pre>
+          <p class="takeaway">The thread lives on disk, not in the chat. One word — <code>continue</code> — and the work is already moving.</p>
+        </div>
       </div>
     </div>
   </section>
@@ -158,6 +185,17 @@ git clone https://github.com/socaseinpoint/arcs ~/arcs &amp;&amp; cd ~/arcs &amp
             Code and describe the work. The agent drives <code>arcs</code> for you — it opens an arc or goal,
             works <code>input → workspace → output</code>, and closes it when the result is self-contained.
             You never type the commands; the structure just appears on disk as the agent goes.</p>
+
+          <figure style="margin-top:1.6rem;">
+            <div class="figcap"><span>your first move — say this in Claude Code</span><span>start</span></div>
+<pre class="scene"><span class="k">you →</span> "Set up arcs here, then build me a Stripe checkout."
+<span class="a">agent →</span> arcs init · arcs new-goal payments
+<span class="a">agent →</span> works 01-stripe: input → workspace → output
+<span class="a">agent →</span> arcs close stripe   <span class="c"># result self-contained in output/</span>
+<span class="k">you →</span> arcs status            <span class="c"># peek the board, anytime</span></pre>
+          </figure>
+          <p class="prose dim">That's the whole onboarding: one sentence to your agent. No commands to memorize —
+            the only line you'll ever type yourself is <code>arcs status</code>, and only when you want to look.</p>
 
           <p class="prose dim">
             <b>peek if you want.</b> The one line a human might actually run —

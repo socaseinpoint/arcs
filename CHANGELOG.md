@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Landing payoff + first move.** `docs/index.html` gains a before→after "wow" band (a cold session
+  days later: re-explain-and-redo vs. one-word `continue` that resumes from `.arcs/`) and a concrete
+  "say this in Claude Code" first-move block, so the page shows the pain→relief and the start path,
+  not just install steps.
+- Investigated the "Russian in `bin/arcs`" flag: it's the intentional `ru)` locale branch of the
+  en/ru/es templates (field keys stay English) — kept as-is, no code change.
+
 ## [0.3.0] - 2026-06-18
 
 ### Added

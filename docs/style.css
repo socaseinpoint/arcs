@@ -136,6 +136,26 @@ p.prose.dim { color: var(--ink-dim); }
 .reason p { margin: 0.9rem 0 0; color: var(--ink-dim); font-size: 0.96rem; line-height: 1.55; }
 .reason p code { color: var(--ink); }
 
+/* ---------- before → after (the wow band) ---------- */
+.contrast { background: var(--bg-soft); border-bottom: 1px solid var(--line); }
+.contrast .wrap { padding-block: clamp(3.5rem, 2.4rem + 5vw, 6.5rem); }
+.contrast .band-head { font-family: var(--mono); font-size: var(--text-kicker); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin: 0 0 1.8rem; }
+.contrast-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); border: 1px solid var(--line); }
+@media (max-width: 720px) { .contrast-grid { grid-template-columns: 1fr; } }
+.cc { background: var(--bg); padding: clamp(1.5rem, 3vw, 2.4rem); display: flex; flex-direction: column; }
+.cc.relief { background: linear-gradient(180deg, rgba(255,180,84,0.05), transparent 60%); }
+.cc .tag { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); }
+.cc.relief .tag { color: var(--accent); }
+.cc h3 { font-size: clamp(1.1rem, 1rem + 0.5vw, 1.4rem); font-weight: 500; letter-spacing: -0.01em; margin: 0.7rem 0 1.2rem; max-width: 22ch; }
+.cc.relief h3 em { font-style: normal; color: var(--accent); }
+.scene { font-family: var(--mono); font-size: clamp(0.78rem, 0.72rem + 0.3vw, 0.88rem); line-height: 1.75; margin: 0; padding: 1.1rem 1.2rem; border: 1px solid var(--line); background: rgba(0,0,0,0.25); white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink-dim); }
+.scene .k { color: var(--ink); }
+.scene .a { color: var(--accent); }
+.scene .c { color: var(--ink-faint); }
+figure .scene { border: 0; background: rgba(0,0,0,0.2); }
+.cc .takeaway { margin: 1.2rem 0 0; font-size: 0.95rem; line-height: 1.5; color: var(--ink-dim); }
+.cc.relief .takeaway { color: var(--ink); }
+
 /* ---------- figure ---------- */
 figure { margin: 0; border: 1px solid var(--line); }
 figure .figcap { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); padding: 0.8rem 1.1rem; border-bottom: 1px solid var(--line); }
