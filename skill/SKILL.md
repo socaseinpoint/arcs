@@ -11,12 +11,16 @@ in the arcs repo (skill is symlinked from `<arcs-repo>/skill`, so spec is at `..
 
 ## Do this BEFORE starting the task (mandatory — make these your first todos)
 1. Run `arcs status` to orient (open goals/arcs, where things stand).
-2. Read `.arcs/rules/*.md` and **obey every rule with `enabled: true`** for the whole session (see `## Rules`).
+2. Read the enabled rules from `.arcs/config` (`rules=`), then read each one's body (local
+   `.arcs/rules/<slug>.md` or the global `<repo>/rules/<slug>.md`) and **obey it** for the whole session (see `## Rules`).
 3. Trivial one-liner (a fact, a tiny edit)? Skip arcs. Anything real — a feature, a bug hunt,
    research, a refactor, a multi-step task — **must** run inside an arc. Don't rationalize past this.
-4. **Open the container first, before working:**
-   - one self-contained chunk → `arcs new-arc <slug>`
-   - multi-step / a project thread → `arcs new-goal <slug>`, then `arcs new-arc -g <slug> <step>`
+4. **Open the container first, before working** (arc = work with NO purpose; goal = an arc WITH a purpose):
+   - one self-contained chunk, no overarching purpose → `arcs new-arc <slug>` (creates `NN-<slug>/`)
+   - a purpose with multiple steps → `arcs new-goal <slug>` (creates `NN-@<slug>/`), then
+     `arcs new-arc -g <slug> <step>` for each nested arc in the goal's substream
+   - **Slugs must be descriptive / content-rich** — multi-word and meaningful (`rewrite-landing-hero`,
+     `trace-auth-token-leak`), never `fix`, `stuff`, `task`, `tmp`. The slug is how the work is found later.
 5. Write the user's request/spec into the arc's `input/`. Start a plan/notes file in `workspace/`.
 6. Do the work — keeping notes flowing into `workspace/` as you go, not dumped at the end. Finish an
    arc by writing `output/` then `arcs close <slug>`.
@@ -34,39 +38,46 @@ it's the **spine/log** of the work:
 - `arc.md` — goal + status (`active`→`done`), kept current.
 
 A coding task is done = code written AND the arc carries `output/` + `arc.md status: done`. You set
-that done-state by running `arcs close <slug>` (writes `status: done` and renames `NN-slug` →
-`__NN-slug__`, so finished arcs are visible at a glance in `ls`). Reverse with `arcs reopen <slug>`.
-Numbering still counts closed arcs, so numbers are never reused.
+that done-state by running `arcs close <slug>` (writes `status: done` and wraps the name in `__…__`:
+`NN-<slug>` → `__NN-<slug>__`, a goal `NN-@<slug>` → `__NN-@<slug>__`, so finished work is visible at a
+glance in `ls`). Reverse with `arcs reopen <slug>`. Numbering counts closed entries, so numbers are never reused.
 **`.arcs/` still empty when you finish = you skipped the method. That's the failure mode. Don't.**
 
-## Two primitives
-- **arc** — atom of work: `input/` → `workspace/` → `output/` (the outside reads ONLY `output/`) + `arc.md`.
-  Encapsulation: anything the next step needs must be derivable from `output/` alone.
-- **goal** — "arc with a purpose": same skeleton + its own `arcs/` + a versioned status file
-  `NN-<slug>-goal.md` (highest number = current; never edit old versions, drop a new one).
+## Two primitives — one stream
+`.arcs/` holds `config`, `rules/`, and `arcs/` — **a single numbered stream**. There is no separate
+goals directory; arcs and goals share continuous numbering in `.arcs/arcs/`.
+- **arc** — work with NO purpose: `NN-<slug>/` = `input/` → `workspace/` → `output/` (the outside reads
+  ONLY `output/`) + `arc.md`. Encapsulation: anything the next step needs must be derivable from `output/` alone.
+- **goal** — an arc WITH a purpose: `NN-@<slug>/` (the `@` marks a goal). Same skeleton + its own nested
+  `arcs/` substream + a versioned status file `MM-<slug>-goal.md` (highest number = current; never edit
+  old versions, drop a new one).
 
 ## Rules (toggleable behavior layer)
-Rules are markdown files in `.arcs/rules/<slug>.md` — a `# <slug>` header, an `enabled: true|false`
-line, then a body describing a behavior you must follow. At session start (right after `arcs status`)
-read them all and **obey every rule whose `enabled:` is `true`**. Manage with `arcs rule list / on
-<slug> / off <slug> / add <slug>` (you run these, not the user).
+A rule is a markdown body describing a behavior you must follow. **Bodies are global** — shipped in
+the method repo at `<repo>/rules/<slug>.md` (skill is symlinked from `<arcs-repo>/skill`, so the
+global rules dir is at `../rules/`), so `arcs update` ships new rules to every project at once. The
+**switch** is the `rules=` line in `.arcs/config` — a comma list of enabled slugs (e.g.
+`rules=subagents`). A project may **override or add** a rule with a local body at `.arcs/rules/<slug>.md`
+(local wins over a global of the same name). At session start read `rules=`, then for each slug read
+its body (local if present, else global) and **obey it**. Manage with `arcs rule list / on <slug> /
+off <slug> / add <slug>` (you run these, not the user).
 
-Shipped on by default at `arcs init`: **`subagents`** — an arc is a subagent boundary
+Shipped enabled by default: **`subagents`** (global body) — an arc is a subagent boundary
 (input→workspace→output). When enabled: delegate each arc's execution to a subagent, run independent
 arcs as parallel subagents and pipeline dependent ones, and keep the orchestrator context lean by
 reading back only each arc's `output/`.
 
 ## Commands (you run these, not the user)
 ```
-arcs status                    board — run first, every session
-arcs new-goal <slug>           new goal (multi-arc work)
-arcs new-arc -g <goal> <slug>  arc inside a goal (one step)
-arcs new-arc <slug>            standalone arc (one-off)
-arcs close [-g <goal>] <slug>  finish an arc: status: done + rename NN-slug → __NN-slug__ (refuses an empty output/; -f overrides)
-arcs reopen [-g <goal>] <slug> undo close: __NN-slug__ → NN-slug, status back to active
-arcs rule list                 list rules + enabled state
-arcs rule on/off <slug>        toggle a rule
-arcs rule add <slug>           scaffold a new rule file
+arcs status                    board — one stream of arcs + goals; run first, every session
+arcs new-goal <slug>           new goal: NN-@<slug>/ in the shared stream (a purpose with its own substream)
+arcs new-arc -g <goal> <slug>  arc inside a goal's substream (one step)
+arcs new-arc <slug>            standalone arc: NN-<slug>/ (work with no purpose)
+arcs close [-g <goal>] <slug>  finish: status: done + wrap name in __…__ (refuses an empty output/; -f overrides)
+arcs reopen [-g <goal>] <slug> undo close: __…__ → unwrapped name, status back to active
+arcs rule list                 list global + local rules with on/off state
+arcs rule on/off <slug>        toggle a rule (edits the `rules=` switch in .arcs/config)
+arcs rule add <slug>           scaffold a LOCAL custom rule (.arcs/rules/<slug>.md, off until enabled)
 arcs init / arcs update        opt a project in / self-update (only on user request)
 ```
 If `arcs` isn't on PATH, create the same dirs/files by hand per `SPEC.md` — the method still applies.

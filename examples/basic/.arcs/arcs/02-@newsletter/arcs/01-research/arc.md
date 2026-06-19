@@ -2,7 +2,7 @@
 
 goal: gather candidate stories for issue #1
 status: done
-closes: goal 01-newsletter step 1
+closes: goal 02-@newsletter step 1
 
 ## input
 - input/sources.md — feeds and blogs to scan

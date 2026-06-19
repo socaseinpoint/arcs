@@ -1,7 +1,7 @@
 # subagents
-enabled: true
 
 Delegate arc execution to subagents; keep the orchestrator's context lean.
+(Enabled per project via `.arcs/config` `rules=`; this file is the global definition.)
 
 An arc is already an encapsulated unit — `input → workspace → output`, where the outside
 reads only `output/`. That boundary IS a subagent boundary. So:

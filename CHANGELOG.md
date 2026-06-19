@@ -7,27 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **Rules — a toggleable behavior layer.** Per-project markdown rules in `.arcs/rules/<slug>.md`
-  (`# <slug>` + `enabled: true|false` + body). An agent reads them at session start and obeys
-  every enabled rule. Manage with `arcs rule list | on <slug> | off <slug> | add <slug>`.
-  The base method is unchanged with all rules off.
-- **`subagents` rule, shipped enabled by default** at `arcs init`. An arc is an encapsulated
-  unit (`input → workspace → output`, outside reads only `output/`), so the arc boundary is a
-  subagent boundary: dispatch one subagent per arc, run independent arcs in parallel, pipeline
-  dependent ones, and keep the orchestrator reading back only each arc's `output/`.
-- **Closing arcs with a visible marker.** `arcs close [-g <goal>] <slug>` renames `NN-<slug>`
-  → `__NN-<slug>__` and sets `status: done`, so finished arcs are obvious in `ls`.
-  `arcs reopen [-g <goal>] <slug>` reverses it. `arcs close` refuses an arc with an empty
-  `output/` (a closed arc must carry a self-contained result); `-f` / `--force` overrides.
-- `rules:` line in `arcs status` showing which rules are enabled.
+- **Rules — a toggleable behavior layer.** Rule **bodies are global**, shipped in the method
+  repo at `<arcs-repo>/rules/<slug>.md` and versioned with the method (so `arcs update` brings
+  new rules to every project). The **on/off switch** is the `rules=` line in `.arcs/config`
+  (a comma list of enabled slugs). A project may override or add a rule locally at
+  `.arcs/rules/<slug>.md` (local wins). Manage with `arcs rule list | on <slug> | off <slug> | add <slug>`.
+- **`subagents` rule, shipped enabled by default** (`arcs init` writes `rules=subagents`). An arc
+  is an encapsulated unit (`input → workspace → output`, outside reads only `output/`), so the arc
+  boundary is a subagent boundary: dispatch one subagent per arc, run independent arcs in parallel,
+  pipeline dependent ones, orchestrator reads back only each arc's `output/`.
+- **Closing arcs/goals with a visible marker.** `arcs close [-g <goal>] <slug>` wraps the folder
+  `NN-<slug>` → `__NN-<slug>__` (a goal `NN-@<slug>` → `__NN-@<slug>__`) and sets `status: done`.
+  `arcs reopen` reverses it. `arcs close` refuses an empty `output/` (a closed arc must carry a
+  self-contained result); `-f` overrides.
+- `rules:` line in `arcs status`; `arcs status` now prints one **STREAM** board.
 - Essence-first landing rewrite (`docs/index.html`): benefit-led hero, quickstart pulled high,
-  the method spec demoted to a "how it works" section, honest "works with or without an agent"
-  framing.
+  spec demoted, honest "works with or without an agent" framing. README links to the landing.
 
 ### Changed
-- Arc numbering now counts both open `NN-*` and closed `__NN-*__` entries, so numbers are
-  never reused after a close.
-- `skill/SKILL.md` and `SPEC.md` document the rules layer and the close/reopen lifecycle.
+- **One stream, no separate goals dir.** Dropped `.arcs/goals/`. Arcs and goals now share a single
+  continuous numbered stream in `.arcs/arcs/`; a goal is marked by an `@` in its name (`NN-@<slug>/`)
+  and keeps its own nested `arcs/` substream + versioned goal doc. Numbering counts open `NN-*`,
+  goals `NN-@*`, and closed `__…__`; numbers are never reused.
+- Slugs must be descriptive / content-rich (enforced by the skill).
+- `skill/SKILL.md`, `SPEC.md`, `examples/`, and the landing document the single-stream model,
+  the global-rules-with-config-toggle layer, and the close/reopen lifecycle.
 
 ## [0.1.0] - 2026-06-18
 

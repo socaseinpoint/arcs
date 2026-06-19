@@ -102,7 +102,7 @@ exec $SHELL                      <span class="c"># reload shell so `arcs` is fou
 cd my-project &amp;&amp; <span class="k">arcs init</span>      <span class="c"># creates .arcs/ + picks the arc language</span>
 
 <span class="c"># 3 · then just work. the agent opens arcs as it goes:</span>
-<span class="k">arcs new-goal</span> payments         <span class="c"># multi-step thread</span>
+<span class="k">arcs new-goal</span> payments         <span class="c"># multi-step thread → NN-@payments</span>
 <span class="k">arcs new-arc</span> -g payments stripe <span class="c"># one step inside it</span>
 <span class="k">arcs close</span> -g payments stripe   <span class="c"># done → writes output/, renames to __NN-stripe__</span>
 <span class="k">arcs status</span>                    <span class="c"># the board — where everything stands</span></pre>
@@ -137,7 +137,7 @@ cd my-project &amp;&amp; <span class="k">arcs init</span>      <span class="c">#
         <div class="concept">
           <span class="tag">.arcs/</span>
           <h3><span data-l="ru">мета-директория</span><span data-l="en">the meta directory</span></h3>
-          <p><span data-l="ru">Вся работа метода — в скрытом <code>.arcs/</code> в корне проекта, чтобы не засорять код. <code>arcs/</code> — отдельные арки, <code>goals/</code> — многоарочные цели. Тулинг снаружи; проект получает только <code>.arcs/</code>.</span><span data-l="en">All method work lives in a hidden <code>.arcs/</code> at the project root, so it never clutters the code. <code>arcs/</code> — standalone arcs, <code>goals/</code> — multi-arc goals. Tooling stays outside; a project gets only <code>.arcs/</code>.</span></p>
+          <p><span data-l="ru">Вся работа метода — в скрытом <code>.arcs/</code> в корне проекта, чтобы не засорять код: <code>config</code>, <code>rules/</code> и единый поток <code>arcs/</code>. В нём общая сквозная нумерация: арка — <code>NN-&lt;slug&gt;/</code>, цель — <code>NN-@&lt;slug&gt;/</code> (<code>@</code> метит цель). Отдельной <code>goals/</code> больше нет. Тулинг снаружи; проект получает только <code>.arcs/</code>.</span><span data-l="en">All method work lives in a hidden <code>.arcs/</code> at the project root, so it never clutters the code: <code>config</code>, <code>rules/</code> and one single stream <code>arcs/</code>. It carries shared continuous numbering: an arc is <code>NN-&lt;slug&gt;/</code>, a goal is <code>NN-@&lt;slug&gt;/</code> (the <code>@</code> marks a goal). There's no separate <code>goals/</code> anymore. Tooling stays outside; a project gets only <code>.arcs/</code>.</span></p>
         </div>
       </div>
 
@@ -181,7 +181,7 @@ cd my-project &amp;&amp; <span class="k">arcs init</span>      <span class="c">#
         <div></div>
         <div>
           <p class="prose"><span data-l="ru"><b>Без агента arcs — это дисциплина.</b> Ты сам заводишь папки и держишь <code>output/</code> самодостаточным. Ценность — структура и «ты здесь», даже в одиночку.</span><span data-l="en"><b>Without an agent, arcs is a discipline.</b> You create the folders and keep <code>output/</code> self-contained yourself. The value — structure and "you are here" — holds even solo.</span></p>
-          <p class="prose dim"><span data-l="ru"><b>С агентом arcs соблюдается само.</b> Скилл + хуки превращают метод из «надо помнить» в «нельзя обойти» — и тут максимальная выгода: холодный хэндофф между сессиями и агентами. Поведение настраивается правилами в <code>.arcs/rules/</code> — правило <code>subagents</code> (вкл. по умолчанию) велит делегировать каждую арку сабагенту и гонять независимые параллельно. Язык арок — на проект (<code>arcs lang en|ru|es</code>), так что весь проект можно вести на русском. <code>.arcs/</code> обычно <b>коммитят</b> — это память работы. Нужны только bash + grep/sed, без шага сборки.</span><span data-l="en"><b>With an agent, arcs enforces itself.</b> The skill + hooks turn the method from "must remember" into "can't skip" — and that's where the payoff peaks: cold handoff across sessions and agents. Behavior is tuned by rules in <code>.arcs/rules/</code> — the <code>subagents</code> rule (on by default) tells the agent to delegate each arc to a subagent and run independent ones in parallel. The arc language is per project (<code>arcs lang en|ru|es</code>), so a whole project can run in Russian or Spanish. <code>.arcs/</code> is usually <b>committed</b> — it's the memory of the work. Needs only bash + grep/sed, no build step.</span></p>
+          <p class="prose dim"><span data-l="ru"><b>С агентом arcs соблюдается само.</b> Скилл + хуки превращают метод из «надо помнить» в «нельзя обойти» — и тут максимальная выгода: холодный хэндофф между сессиями и агентами. Поведение настраивается правилами: тела глобальны в метод-репо (приезжают с <code>arcs update</code>), включаются на проект в <code>.arcs/config</code> — <code>subagents</code> on по умолчанию: делегировать каждую арку сабагенту, независимые параллельно. Язык арок — на проект (<code>arcs lang en|ru|es</code>), так что весь проект можно вести на русском. <code>.arcs/</code> обычно <b>коммитят</b> — это память работы. Нужны только bash + grep/sed, без шага сборки.</span><span data-l="en"><b>With an agent, arcs enforces itself.</b> The skill + hooks turn the method from "must remember" into "can't skip" — and that's where the payoff peaks: cold handoff across sessions and agents. Behavior is tuned by rules: bodies are global in the method repo (they arrive with <code>arcs update</code>), switched on per project in <code>.arcs/config</code> — <code>subagents</code> on by default: delegate each arc to a subagent, independent ones in parallel. The arc language is per project (<code>arcs lang en|ru|es</code>), so a whole project can run in Russian or Spanish. <code>.arcs/</code> is usually <b>committed</b> — it's the memory of the work. Needs only bash + grep/sed, no build step.</span></p>
         </div>
       </div>
     </div>
@@ -194,7 +194,7 @@ cd my-project &amp;&amp; <span class="k">arcs init</span>      <span class="c">#
         <div class="num">§ 05</div>
         <div>
           <h2><span data-l="ru">Примеры. Как выглядит настоящий <code>.arcs/</code>.</span><span data-l="en">Examples. What a real <code>.arcs/</code> looks like.</span></h2>
-          <div class="sub"><span data-l="ru">Маленький проект: одна цель (рассылка, многоарочная) и одна отдельная арка (one-shot спайк).</span><span data-l="en">A tiny project: one goal (a newsletter, multi-arc) and one standalone arc (a one-shot spike).</span></div>
+          <div class="sub"><span data-l="ru">Маленький проект: один поток <code>arcs/</code> — арка (<code>01-spike-vite</code>) и цель (<code>02-@newsletter</code>) с общей нумерацией.</span><span data-l="en">A tiny project: one <code>arcs/</code> stream — an arc (<code>01-spike-vite</code>) and a goal (<code>02-@newsletter</code>) sharing one numbering.</span></div>
         </div>
       </div>
 
@@ -205,12 +205,11 @@ cd my-project &amp;&amp; <span class="k">arcs init</span>      <span class="c">#
             <div class="figcap"><span>fig.01 — examples/basic/.arcs/</span><span><span data-l="ru">дерево</span><span data-l="en">tree</span></span></div>
 <pre>basic/.arcs/
   arcs/
-    01-spike-vite/                  <span class="c"># standalone arc — one question, answered</span>
+    01-spike-vite/                  <span class="c"># arc — one question, answered</span>
       arc.md
       output/verdict.md             <span class="a">← the public interface (self-contained)</span>
-  goals/
-    01-newsletter/                  <span class="c"># a goal = an arc with a purpose + its own arcs</span>
-      01-newsletter-goal.md         <span class="c"># brief status: where we are, which arcs are open</span>
+    02-@newsletter/                 <span class="c"># goal — an arc WITH a purpose (@ marks it)</span>
+      01-newsletter-goal.md         <span class="c"># versioned status: where we are, which arcs are open</span>
       arcs/
         01-research/
           arc.md
@@ -225,12 +224,10 @@ cd my-project &amp;&amp; <span class="k">arcs init</span>      <span class="c">#
         <div>
           <figure>
             <div class="figcap"><span>fig.02 — $ arcs status</span><span><span data-l="ru">доска</span><span data-l="en">the board</span></span></div>
-<pre>GOALS
-  01-newsletter                    <span class="a">[active]</span>  ship issue #1 of a weekly dev newsletter
-      01-research                        <span class="a">[done]</span>    gather candidate stories for issue #1
-
-ARCS
-  01-spike-vite                      <span class="a">[done]</span>    check whether Vite 6 breaks our PostCSS setup</pre>
+<pre>STREAM
+  01-spike-vite                      <span class="a">[done]</span>    check whether Vite 6 breaks our PostCSS setup
+  02-@newsletter                     <span class="a">[active]</span>  ship issue #1 of a weekly dev newsletter
+      01-research                      <span class="a">[done]</span>    gather candidate stories for issue #1</pre>
           </figure>
         </div>
       </div>
@@ -244,8 +241,8 @@ ARCS
               <p><span data-l="ru">Арка-черновик читает <code>01-research/output/shortlist.md</code> и ничего из его <code>workspace/</code>. Закрыл арку → её output стоит сам по себе.</span><span data-l="en">The drafting arc reads <code>01-research/output/shortlist.md</code> and nothing from its <code>workspace/</code>. Close an arc → its output stands on its own.</span></p>
             </div>
             <div class="note">
-              <span class="nk">standalone <span data-l="ru">vs</span><span data-l="en">vs</span> goal</span>
-              <p><span data-l="ru"><code>01-spike-vite</code> — выкидной вопрос, который стоит сохранить → корневая арка. Рассылка — устойчивая многошаговая работа → goal со своими арками.</span><span data-l="en"><code>01-spike-vite</code> is a throwaway question worth persisting → a root arc. The newsletter is sustained, multi-step → a goal with its own arcs.</span></p>
+              <span class="nk">arc <span data-l="ru">vs</span><span data-l="en">vs</span> goal</span>
+              <p><span data-l="ru">Один поток, общая нумерация. <code>01-spike-vite</code> — выкидной вопрос, который стоит сохранить → арка. <code>02-@newsletter</code> — устойчивая многошаговая работа → цель (метка <code>@</code>) со своими арками.</span><span data-l="en">One stream, shared numbering. <code>01-spike-vite</code> is a throwaway question worth persisting → an arc. <code>02-@newsletter</code> is sustained, multi-step → a goal (marked <code>@</code>) with its own arcs.</span></p>
             </div>
             <div class="note">
               <span class="nk">goal.md <span data-l="ru">— «ты здесь»</span><span data-l="en">— "you are here"</span></span>

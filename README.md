@@ -4,6 +4,8 @@ A file-based method for running work. Two primitives — **arc** (atom of work) 
 with a purpose that holds nested arcs). State lives in files, not in an ephemeral chat. Tool-independent.
 All work lives in a hidden `.arcs/` — **it never clutters project code**.
 
+🔗 **Landing:** [arcs-delta.vercel.app](https://arcs-delta.vercel.app)
+
 ## Quick start
 
 ```bash
