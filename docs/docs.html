@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>arcs — documentation</title>
+<meta name="description" content="The full arcs mental model: concepts, lifecycle, immutable Goals v2 with computed checklists and supersession chains, the rules layer, candidates, the full command reference, install, and a worked example." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="style.css?v=3" />
+</head>
+<body class="docs">
+
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="index.html"><b>.</b>arcs</a>
+    <nav class="nav-right" aria-label="Main navigation">
+      <span class="nav-links">
+        <a href="index.html">home</a>
+        <a href="#concepts">concepts</a>
+        <a href="#goals">goals v2</a>
+        <a href="#commands">commands</a>
+        <a href="#install">install</a>
+      </span>
+      <a href="https://github.com/socaseinpoint/arcs" target="_blank" rel="noopener">github ↗</a>
+    </nav>
+  </div>
+</header>
+
+<div class="docs-shell wrap">
+
+  <!-- SECTION NAV -->
+  <aside class="docs-nav" aria-label="Documentation sections">
+    <p class="docs-nav-label mono">on this page</p>
+    <nav>
+      <ol>
+        <li><a href="#what">What &amp; why</a></li>
+        <li><a href="#concepts">Concepts</a></li>
+        <li><a href="#lifecycle">Lifecycle</a></li>
+        <li><a href="#goals">Goals v2</a></li>
+        <li><a href="#rules">Rules layer</a></li>
+        <li><a href="#candidates">Candidates</a></li>
+        <li><a href="#commands">Command reference</a></li>
+        <li><a href="#install">Install</a></li>
+        <li><a href="#example">Worked example</a></li>
+      </ol>
+    </nav>
+    <p class="docs-nav-foot mono"><a href="index.html">← back to landing</a></p>
+  </aside>
+
+  <!-- DOCS BODY -->
+  <main class="docs-main">
+
+    <header class="docs-head reveal">
+      <span class="mono">§ documentation</span>
+      <h1>The arcs method, in full.</h1>
+      <p class="lead">
+        The landing tells you the value in thirty seconds. This page is the mental model:
+        <b>what</b> arcs is, <b>where</b> the state lives, <b>how</b> the lifecycle runs, and
+        <b>why</b> each rule exists. Every command and field below is the real CLI behavior.
+      </p>
+    </header>
+
+    <!-- WHAT & WHY -->
+    <section id="what" class="docs-section reveal">
+      <h2><span class="sec-num mono">01</span> What &amp; why</h2>
+      <p>
+        Agent work has a failure mode: it happens in an ephemeral chat. Decisions, dead-ends and
+        half-finished artifacts scroll away. The next session — or the next agent — starts cold, with no
+        source of truth for "what was actually done."
+      </p>
+      <p>
+        arcs answers that with one move: <b>the files are the record.</b> Every chunk of work is a folder
+        with a fixed shape — <code>input → workspace → output</code> — under a hidden <code>.arcs/</code> at
+        the project root, so the method never clutters your code. State lives on disk, not in a conversation.
+        The method is independent of tooling: agents, chats and IDEs are implementation details. Turn off
+        every optional rule and arcs still runs as plain, named folders.
+      </p>
+      <div class="callout">
+        <span class="callout-k mono">the one rule that makes it work</span>
+        <p><b>Encapsulation.</b> Anything the next step needs must be <em>derivable from <code>output/</code> alone</em>.
+        <code>workspace/</code> is private and never leaks; <code>input/</code> is what came in. Get this right and
+        any agent, any session, can pick up the work from its <code>output/</code> with zero chat history.</p>
+      </div>
+    </section>
+
+    <!-- CONCEPTS -->
+    <section id="concepts" class="docs-section reveal">
+      <h2><span class="sec-num mono">02</span> Concepts</h2>
+      <p>
+        Everything lives in one place and follows two primitives. There is no separate <code>goals/</code>
+        directory — arcs and goals share a single numbered stream.
+      </p>
+
+      <h3>The single stream</h3>
+      <p>
+        All work sits in <code>.arcs/arcs/</code> under <b>one continuous numbering sequence</b>. Arcs and
+        goals draw from the same counter, so an arc and a goal never share a number. Closing renames an
+        entry but never frees its number.
+      </p>
+      <figure>
+        <div class="figcap"><span>.arcs/ layout</span><span>tree</span></div>
+<pre>&lt;project&gt;/
+  .arcs/
+    config              <span class="c"># arc language (en|ru|es) + the rules= toggle line</span>
+    rules/              <span class="c"># LOCAL rule overrides / custom rules (built-ins are global)</span>
+    candidates/         <span class="c"># surfaced arc-candidates, NN-&lt;slug&gt;.md (the backlog)</span>
+    arcs/               <span class="c"># ONE continuous stream:</span>
+      NN-&lt;slug&gt;/          <span class="a">an arc  — work without a purpose</span>
+      NN-@&lt;slug&gt;/         <span class="a">a goal  — an arc WITH a purpose (@ marks it)</span>
+  &lt;project code&gt;</pre>
+      </figure>
+
+      <h3>arc vs goal</h3>
+      <div class="def-grid">
+        <div class="def">
+          <span class="tag">arc</span>
+          <h4>work without a purpose</h4>
+          <p>
+            A folder <code>NN-&lt;slug&gt;/</code> — one finished chunk. Need an answer but don't want it lost in
+            the chat → drop an arc. One-shot, self-contained. It carries <code>input/</code>,
+            <code>workspace/</code>, <code>output/</code>, and a small <code>arc.md</code> passport.
+          </p>
+        </div>
+        <div class="def">
+          <span class="tag">goal</span>
+          <h4>an arc with a purpose</h4>
+          <p>
+            A folder <code>NN-@&lt;slug&gt;/</code> — the <code>@</code> marks it. The same skeleton, plus its own
+            nested <code>arcs/</code> substream and an immutable <code>&lt;slug&gt;-goal.md</code> status doc. For a
+            project or deep research — meaningful, multi-arc work.
+          </p>
+        </div>
+      </div>
+
+      <h3>input → workspace → output</h3>
+      <p>Each arc has the same three folders. The OOP analogy is exact:</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Folder / file</th><th>Role</th><th>OOP analogue</th></tr></thead>
+          <tbody>
+            <tr><td><code>input/</code></td><td>what entered the work context — seed, requirements, ancestor artifacts</td><td>constructor args</td></tr>
+            <tr><td><code>workspace/</code></td><td>all work in progress — drafts, dead-ends, scratch</td><td>private state</td></tr>
+            <tr><td><code>output/</code></td><td><b>self-contained</b> result — the outside reads ONLY this</td><td>public interface</td></tr>
+            <tr><td><code>arc.md</code></td><td>passport: <code>goal:</code> · <code>status:</code> · pointers to key output</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="dim">
+        Slugs must be descriptive — multi-word and content-rich (<code>extract-auth-from-monolith</code>),
+        never generic (<code>fix</code>, <code>tmp</code>). The name is the at-a-glance index of the stream.
+      </p>
+    </section>
+
+    <!-- LIFECYCLE -->
+    <section id="lifecycle" class="docs-section reveal">
+      <h2><span class="sec-num mono">03</span> Lifecycle</h2>
+      <p>One rhythm, the same for arcs and goals:</p>
+      <figure>
+        <div class="figcap"><span>the rhythm</span><span>open → work → output → close</span></div>
+<pre>open arc → fix input/ → work in workspace/ → write output/ → <span class="k">arcs close</span>
+   → update arc.md → (inside a goal) pull a pointer into the goal → next</pre>
+      </figure>
+      <p>
+        You <b>open before working</b>: <code>arcs new-arc &lt;slug&gt;</code> (or <code>new-goal</code>) scaffolds
+        <code>input/ workspace/ output/</code> and a templated <code>arc.md</code>. As you work, notes flow
+        into <code>workspace/</code> — not dumped at the end. When the result is ready you write it to
+        <code>output/</code> and close.
+      </p>
+      <p>
+        <b>Closing marks done two ways at once.</b> <code>arcs close &lt;slug&gt;</code> sets
+        <code>status: done</code> in the status doc <em>and</em> renames the folder
+        <code>NN-&lt;slug&gt;</code> → <code>__NN-&lt;slug&gt;__</code> (two underscores each side) — so finished work is
+        visible in a bare <code>ls</code>. It <b>refuses an empty <code>output/</code></b>: a closed arc must
+        carry a self-contained result. Override deliberately with <code>arcs close -f &lt;slug&gt;</code>.
+        <code>arcs reopen &lt;slug&gt;</code> undoes both — strips the <code>__…__</code>, status back to
+        <code>active</code>.
+      </p>
+    </section>
+
+    <!-- GOALS V2 -->
+    <section id="goals" class="docs-section reveal">
+      <h2><span class="sec-num mono">04</span> Goals v2 — the immutable contract</h2>
+      <p>
+        A goal is the newest and most important idea in arcs. Its intent <b>does not get edited in place.</b>
+        The doc is a <code>goal:</code> line plus a <code>## Checklist</code>, and it carries <b>no version
+        number</b> — one <code>&lt;slug&gt;-goal.md</code> per goal. Two rules follow from immutability.
+      </p>
+
+      <h3>1 · Immutable intent → supersession chains</h3>
+      <p>
+        When the <em>aim</em> changes — a real change of meaning, not a wording fix — you don't rewrite the
+        goal. You close the old one and open a new one that carries <code>supersedes: &lt;old-slug&gt;</code>,
+        leaving a chain you can trace. The CLI does it in one move:
+      </p>
+      <figure>
+        <div class="figcap"><span>$ arcs supersede</span><span>a traceable pivot</span></div>
+<pre><span class="k">arcs supersede</span> [-g &lt;goal&gt;] &lt;old-slug&gt; &lt;new-slug&gt;
+
+<span class="c"># it does all of this, atomically:</span>
+<span class="c"># 1. closes &lt;old&gt; with -f (a superseded unit may carry no output)</span>
+<span class="c"># 2. creates &lt;new&gt; in the same scope</span>
+<span class="c"># 3. writes  supersedes: &lt;old&gt;  into the new arc.md</span>
+<span class="c"># 4. seeds   input/from-&lt;old&gt;.md  pointing back to the predecessor</span></pre>
+      </figure>
+      <p>
+        Both stay on disk, linked — a pivot you can trace, not a rename. References are bare folder slugs
+        (the parser tolerates <code>__…__</code>). <code>prev:</code> is accepted as a read-only alias of
+        <code>supersedes:</code>. Clarifying edits are still fine in place; supersede only when the meaning
+        moves.
+      </p>
+
+      <h3>2 · No version number → a computed checklist</h3>
+      <p>
+        Instead of a version axis, a goal carries a <code>## Checklist</code>. Each item has a <b>stable
+        key</b>, resolved in this order:
+      </p>
+      <ol class="ordered">
+        <li>an explicit <code>{#key}</code> on the line wins;</li>
+        <li>else the leading slug-token of a <code>&lt;key&gt; — &lt;description&gt;</code> line;</li>
+        <li>else a slug of the whole item text.</li>
+      </ol>
+      <p>
+        Keys are slugs, never "step N" — numbers shift when you insert an item. The doc always stores items
+        as <code>- [ ]</code>. <b>Done-state is never hand-ticked</b> — hand-marking reintroduces the drift
+        the method exists to kill. It is <b>computed</b>: a sub-arc that finishes an item carries
+        <code>closes: &lt;item-key&gt;</code>, and <code>arcs status</code> renders the result.
+      </p>
+      <figure>
+        <div class="figcap"><span>$ arcs status</span><span>computed done-state</span></div>
+<pre>  02-@&lt;goal&gt;                    <span class="a">[active]</span>  &lt;goal line&gt;   <span class="a">(1/3 ✓)</span>
+      ✓ &lt;item-key&gt;                  <span class="a">→ &lt;arc that closed it&gt;</span>
+      ○ &lt;item-key&gt;
+      ○ &lt;item-key&gt;</pre>
+      </figure>
+      <p>
+        <code>N/M ✓</code> on the goal line, then <code>✓ &lt;key&gt; → &lt;arc&gt;</code> for closed items and
+        <code>○ &lt;key&gt;</code> for open ones, plus any non-closing or superseded sub-arcs listed with their
+        status. A goal with <b>no</b> <code>## Checklist</code> falls back to a raw sub-arc list
+        (back-compat). The goal doc answers, briefly: the goal, the checklist, and where you are globally —
+        re-open it after a deep dive and you instantly see "you are here."
+      </p>
+    </section>
+
+    <!-- RULES -->
+    <section id="rules" class="docs-section reveal">
+      <h2><span class="sec-num mono">05</span> Rules layer</h2>
+      <p>
+        The base method — arc · goal · encapsulation · versioned status — is complete on its own.
+        <b>Rules</b> are an opt-in layer on top: per-project behaviors an agent follows while working. Turn
+        them all off and the method runs exactly as specified.
+      </p>
+      <p>
+        <b>Rule bodies are global.</b> They ship in the method repo at
+        <code>&lt;arcs-repo&gt;/rules/&lt;slug&gt;.md</code>, versioned with the method — so <code>arcs update</code>
+        brings new and updated rules to every project at once. <b>The switch is per project</b>, in
+        <code>.arcs/config</code>: one comma-separated <code>rules=</code> line. Drop
+        <code>.arcs/rules/&lt;slug&gt;.md</code> to override a global rule of the same name or to add a
+        project-only one — local wins. Toggling never edits a rule file, only the <code>rules=</code> line.
+      </p>
+      <figure>
+        <div class="figcap"><span>managing rules</span><span>config switch, global bodies</span></div>
+<pre><span class="k">arcs rule list</span>            <span class="c"># global + local rules, on/off read from config</span>
+<span class="k">arcs rule on</span> &lt;slug&gt;       <span class="c"># add the slug to .arcs/config rules=</span>
+<span class="k">arcs rule off</span> &lt;slug&gt;      <span class="c"># remove it</span>
+<span class="k">arcs rule add</span> &lt;slug&gt;      <span class="c"># scaffold a LOCAL custom rule (off until you turn it on)</span></pre>
+      </figure>
+      <div class="callout">
+        <span class="callout-k mono">the built-in: subagents</span>
+        <p>
+          <code>arcs init</code> writes <code>rules=subagents</code> by default. Its body lives globally at
+          <code>&lt;repo&gt;/rules/subagents.md</code>. The idea: an arc is already encapsulated
+          (<code>input → workspace → output</code>, outside reads only <code>output/</code>), so <b>the arc
+          boundary IS a subagent boundary.</b> With the rule on, an agent dispatches one subagent per arc —
+          independent arcs in parallel, dependent ones pipelined — while the orchestrator reads back only
+          each arc's <code>output/</code>. Off, the method still works: run the arcs inline, same files.
+        </p>
+      </div>
+    </section>
+
+    <!-- CANDIDATES -->
+    <section id="candidates" class="docs-section reveal">
+      <h2><span class="sec-num mono">06</span> Candidates — the backlog</h2>
+      <p>
+        An idea that surfaces mid-work — a candidate for a <em>future</em> arc — must not be buried in the
+        current arc's <code>workspace/</code>. Workspace is private and <b>disposable: it dies with the
+        arc.</b> So a future-work idea has to be surfaced <b>out</b> onto the board, not left to rot.
+      </p>
+      <p>
+        <code>.arcs/candidates/</code> sits beside <code>.arcs/arcs/</code>. It holds surfaced candidates as
+        numbered <code>NN-&lt;slug&gt;.md</code> files — <b>their own numbering sequence</b>, separate from the
+        work stream. Each carries a <code>from:</code> field (the arc it surfaced from — a traceable origin)
+        plus a free-form body.
+      </p>
+      <figure>
+        <div class="figcap"><span>candidates</span><span>surface → promote</span></div>
+<pre><span class="k">arcs candidate</span> &lt;slug&gt; [--from &lt;arc&gt;] [text]  <span class="c"># capture → candidates/NN-&lt;slug&gt;.md</span>
+<span class="k">arcs candidate list</span>                         <span class="c"># list the backlog</span>
+<span class="k">arcs promote</span> [-g &lt;goal&gt;] &lt;NN-or-slug&gt; [&lt;new-slug&gt;]
+   <span class="c"># turn a candidate into a real arc: creates the arc, MOVES the candidate</span>
+   <span class="c"># file into its input/, removes it from candidates/. Origin preserved.</span></pre>
+      </figure>
+      <p class="dim">
+        <code>arcs status</code> shows the backlog in a CANDIDATES section. Promote only when you actually
+        start the work — the candidate's body becomes the new arc's seed.
+      </p>
+    </section>
+
+    <!-- COMMAND REFERENCE -->
+    <section id="commands" class="docs-section reveal">
+      <h2><span class="sec-num mono">07</span> Command reference</h2>
+      <p>The full set, exactly as <code>bin/arcs</code> dispatches them. Field keys
+        (<code>goal:</code>, <code>status:</code>, <code>closes:</code>, <code>supersedes:</code>) stay
+        English so the tooling is language-agnostic.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Command</th><th>What it does</th></tr></thead>
+          <tbody>
+            <tr><td><code>arcs init [en|ru|es]</code></td><td>create <code>.arcs/</code> + pick the arc language (asks if a TTY); writes <code>rules=subagents</code>.</td></tr>
+            <tr><td><code>arcs lang [en|ru|es]</code></td><td>show or change this project's arc language.</td></tr>
+            <tr><td><code>arcs new-arc &lt;slug&gt;</code></td><td>new standalone arc → <code>.arcs/arcs/NN-&lt;slug&gt;/</code>.</td></tr>
+            <tr><td><code>arcs new-arc -g &lt;goal&gt; &lt;slug&gt;</code></td><td>new arc inside a goal's nested <code>arcs/</code> (local <code>01,02…</code>).</td></tr>
+            <tr><td><code>arcs new-goal &lt;slug&gt;</code></td><td>new goal → <code>NN-@&lt;slug&gt;/</code> in the shared stream, with its own substream + <code>&lt;slug&gt;-goal.md</code>.</td></tr>
+            <tr><td><code>arcs close [-g &lt;goal&gt;] [-f] &lt;slug&gt;</code></td><td>mark done: <code>status: done</code> + rename to <code>__NN-slug__</code>. Refuses an empty <code>output/</code>; <code>-f</code> overrides.</td></tr>
+            <tr><td><code>arcs reopen [-g &lt;goal&gt;] &lt;slug&gt;</code></td><td>undo a close: <code>__NN-slug__</code> → <code>NN-slug</code>, status back to <code>active</code>.</td></tr>
+            <tr><td><code>arcs supersede [-g &lt;goal&gt;] &lt;old&gt; &lt;new&gt;</code></td><td>close <code>&lt;old&gt;</code> (no output guard) + create <code>&lt;new&gt;</code> linked by <code>supersedes:</code> + seed <code>input/from-&lt;old&gt;.md</code>.</td></tr>
+            <tr><td><code>arcs candidate &lt;slug&gt; [--from &lt;arc&gt;] [text]</code></td><td>capture a surfaced arc-candidate in <code>.arcs/candidates/</code>.</td></tr>
+            <tr><td><code>arcs candidate list</code></td><td>list candidates (also shown by <code>arcs status</code>).</td></tr>
+            <tr><td><code>arcs promote [-g &lt;goal&gt;] &lt;NN-or-slug&gt; [&lt;new-slug&gt;]</code></td><td>turn a candidate into a real arc — moves the file into the new arc's <code>input/</code>.</td></tr>
+            <tr><td><code>arcs rule [list|on|off|add] &lt;slug&gt;</code></td><td>toggle behavior rules (global bodies, <code>.arcs/config</code> switch).</td></tr>
+            <tr><td><code>arcs status</code></td><td>print the board — one STREAM of arcs + goals, plus CANDIDATES.</td></tr>
+            <tr><td><code>arcs update</code></td><td>git pull the method + re-wire skill/hooks.</td></tr>
+            <tr><td><code>arcs help</code></td><td>the command list.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- INSTALL -->
+    <section id="install" class="docs-section reveal">
+      <h2><span class="sec-num mono">08</span> Install</h2>
+      <p>
+        The tooling lives in the repo — clone it anywhere (<code>~/arcs</code>, <code>~/code/arcs</code>,
+        whatever). A project only ever gets a hidden <code>.arcs/</code> dir; the method never clutters your
+        code.
+      </p>
+
+      <h3>Quick install (one command)</h3>
+      <figure>
+        <div class="figcap"><span>recommended</span><span>clone + installer</span></div>
+<pre>git clone https://github.com/socaseinpoint/arcs ~/arcs
+cd ~/arcs &amp;&amp; ./install.sh</pre>
+      </figure>
+      <p>
+        <code>install.sh</code> adds <code>arcs</code> to your PATH (in <code>~/.zshrc</code> /
+        <code>~/.bashrc</code>) and, if <code>~/.claude/skills</code> exists, symlinks the Claude skill. Open
+        a new shell afterwards, then check with <code>arcs help</code>.
+      </p>
+
+      <h3>Manual install</h3>
+      <figure>
+        <div class="figcap"><span>if you prefer</span><span>PATH by hand</span></div>
+<pre>git clone https://github.com/socaseinpoint/arcs &lt;DIR&gt;
+echo 'export PATH="&lt;DIR&gt;/bin:$PATH"' &gt;&gt; ~/.zshrc   <span class="c"># your real &lt;DIR&gt;</span>
+source ~/.zshrc
+ln -s &lt;DIR&gt;/skill ~/.claude/skills/arcs           <span class="c"># optional Claude skill</span></pre>
+      </figure>
+
+      <h3>Enforcement (recommended)</h3>
+      <p>Three layers, weakest to strongest — <code>install.sh</code> registers the hooks automatically (in
+        <code>~/.claude/settings.json</code>, with a <code>.bak</code> backup, idempotent):</p>
+      <ol class="ordered">
+        <li><b>skill</b> — <em>advises</em> the agent to use arcs.</li>
+        <li><b><code>arcs-hook</code></b> (SessionStart + UserPromptSubmit) — injects a reminder + the live board each session/prompt in an opted-in project, so the agent can't quietly forget.</li>
+        <li><b><code>arcs-gate</code></b> (PreToolUse <code>Edit|Write|MultiEdit</code>) — a <em>hard</em> block: refuses edits to project files while <code>.arcs/</code> has no active arc. Edits inside <code>.arcs/</code> are always allowed; projects without <code>.arcs/</code> are never affected.</li>
+      </ol>
+
+      <h3>Use it in a project</h3>
+      <figure>
+        <div class="figcap"><span>$ from the project root</span><span>opt in + work</span></div>
+<pre>cd my-project
+<span class="k">arcs init</span>                         <span class="c"># creates .arcs/ + asks the arc language</span>
+<span class="k">arcs new-goal</span> payments            <span class="c"># multi-arc work → .arcs/arcs/NN-@payments/</span>
+<span class="k">arcs new-arc</span> -g payments stripe   <span class="c"># an arc inside the goal</span>
+<span class="k">arcs new-arc</span> spike-redis          <span class="c"># a standalone arc</span>
+<span class="k">arcs status</span>                       <span class="c"># the board</span></pre>
+      </figure>
+
+      <h3>Updating</h3>
+      <p>One command, from anywhere — the CLI knows where it was cloned. Then restart your Claude Code
+        session so it reloads the skill + hooks. Your projects' <code>.arcs/</code> data is untouched.</p>
+      <figure>
+        <div class="figcap"><span>$ arcs update</span><span>idempotent</span></div>
+<pre><span class="k">arcs update</span>          <span class="c"># git pull + re-wire PATH, skill, and hooks</span></pre>
+      </figure>
+      <p class="dim">
+        <b>Requirements:</b> bash + standard coreutils (grep, sed). macOS / Linux. No build step.
+        <b>.gitignore:</b> <code>.arcs/</code> is usually <b>committed</b> — it's the memory of the work. If
+        you'd rather not, add <code>.arcs/</code> to the project's <code>.gitignore</code>.
+      </p>
+    </section>
+
+    <!-- WORKED EXAMPLE -->
+    <section id="example" class="docs-section reveal">
+      <h2><span class="sec-num mono">09</span> Worked example</h2>
+      <p>
+        A tiny project from <code>examples/basic/</code>: one stream holding a throwaway arc and a goal with
+        a checklist. Watch a sub-arc close one checklist item and the board compute <code>1/3 ✓</code>.
+      </p>
+      <figure>
+        <div class="figcap"><span>examples/basic/.arcs/</span><span>the tree</span></div>
+<pre>basic/.arcs/
+  arcs/
+    __01-spike-vite__/              <span class="c"># arc, done — the __…__ marks it closed</span>
+      arc.md
+      output/verdict.md             <span class="a">← the public interface (self-contained)</span>
+    02-@newsletter/                 <span class="c"># goal — an arc WITH a purpose (@ marks it)</span>
+      newsletter-goal.md            <span class="c"># immutable: goal line + checklist + where we are</span>
+      arcs/
+        __01-research__/            <span class="c"># done sub-arc — carries closes: research-stories</span>
+          arc.md
+          input/sources.md          <span class="c"># what came in</span>
+          output/shortlist.md       <span class="a">← what the next arc reads (and ONLY this)</span>
+  candidates/
+    01-add-rss-feed.md              <span class="c"># surfaced from 02-@newsletter, not started</span></pre>
+      </figure>
+      <p>The goal doc holds the checklist; <code>01-research</code> carries
+        <code>closes: research-stories</code>, so the board ticks that item — computed, never hand-marked:</p>
+      <figure>
+        <div class="figcap"><span>$ arcs status</span><span>the board</span></div>
+<pre>STREAM
+  __01-spike-vite__                  <span class="a">[done]</span>    check whether Vite 6 breaks our PostCSS setup
+  02-@newsletter                     <span class="a">[active]</span>  ship issue #1 of a weekly dev newsletter   <span class="a">(1/3 ✓)</span>
+      ✓ research-stories             <span class="a">→ 01-research</span>
+      ○ draft-issue
+      ○ ship-issue
+
+CANDIDATES (surfaced arc-candidates — promote with: arcs promote &lt;slug&gt;)
+  01-add-rss-feed                    <span class="a">from 02-@newsletter</span></pre>
+      </figure>
+      <p class="dim">
+        End to end: <code>arcs init</code> → <code>arcs new-goal newsletter</code> → add a
+        <code>## Checklist</code> to <code>newsletter-goal.md</code> →
+        <code>arcs new-arc -g newsletter research-stories</code>, set <code>closes: research-stories</code>
+        in its <code>arc.md</code>, write <code>output/shortlist.md</code> →
+        <code>arcs close -g newsletter research-stories</code>. The next <code>arcs status</code> shows
+        <code>1/3 ✓</code>. The drafting arc reads only <code>__01-research__/output/shortlist.md</code> —
+        never its workspace.
+      </p>
+    </section>
+
+    <footer class="docs-foot reveal">
+      <span class="mono">arcs · a file-based method for running work</span>
+      <span class="foot-links">
+        <a href="index.html" class="mono">home</a>
+        <a href="https://github.com/socaseinpoint/arcs" target="_blank" rel="noopener" class="mono">github ↗</a>
+        <a href="https://github.com/socaseinpoint/arcs/blob/main/CHANGELOG.md" target="_blank" rel="noopener" class="mono">changelog ↗</a>
+      </span>
+    </footer>
+
+  </main>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

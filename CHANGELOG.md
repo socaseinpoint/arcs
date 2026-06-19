@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-06-18
+
 ### Added
 - **Immutable goals + supersession chains.** A goal's intent no longer gets edited in place. When the
   aim actually changes, `arcs supersede [-g <goal>] <old> <new>` closes the old unit and opens a new one
@@ -36,8 +38,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   promote [-g <goal>] <slug>` turns a candidate into a real arc (moves it into the arc's `input/`).
   A future-work idea surfaces on the board instead of dying in a closed arc's `workspace/`.
 - `rules:` line in `arcs status`; `arcs status` now prints one **STREAM** board.
-- Essence-first landing rewrite (`docs/index.html`): benefit-led hero, quickstart pulled high,
-  spec demoted, honest "works with or without an agent" framing. README links to the landing.
+- **Two-surface web presence.** The landing (`docs/index.html`) is now a short, value-first
+  onboarding for a newcomer with an agent — the promise, three value props, and one 20-second start.
+  A separate deep-docs page (`docs/docs.html`) carries the full what/where/how/why: concepts,
+  lifecycle, goals v2, the rules layer, candidates, a full command reference, install, and a worked
+  example. Landing and docs cross-link both ways.
 
 ### Changed
 - **Dropped goal-doc version numbering.** A goal is now one immutable `<slug>-goal.md` — no `MM-`
@@ -50,6 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Slugs must be descriptive / content-rich (enforced by the skill).
 - `skill/SKILL.md`, `SPEC.md`, `examples/`, and the landing document the single-stream model,
   the global-rules-with-config-toggle layer, and the close/reopen lifecycle.
+- The landing dropped its RU/EN toggle and is English-only, matching the project's `en` default.
 
 ## [0.1.0] - 2026-06-18
 
@@ -66,5 +72,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `arcs update` — one-command self-update (git pull + re-wire skill/hooks).
 - Bilingual (RU/EN) landing page and `examples/basic` walkthrough.
 
-[Unreleased]: https://github.com/socaseinpoint/arcs/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/socaseinpoint/arcs/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/socaseinpoint/arcs/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/socaseinpoint/arcs/releases/tag/v0.1.0
