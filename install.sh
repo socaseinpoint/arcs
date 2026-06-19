@@ -37,7 +37,7 @@ fi
 
 # Enforcement hooks in ~/.claude/settings.json:
 #   arcs-hook → SessionStart + UserPromptSubmit (reminder + board)   [advisory]
-#   arcs-gate → PreToolUse Edit|Write|MultiEdit (block edits till an arc is open)  [hard]
+#   arcs-gate → PreToolUse Edit|Write|MultiEdit|NotebookEdit (block edits till an arc is open)  [hard]
 CLAUDE_DIR="$HOME/.claude"
 if [ -d "$CLAUDE_DIR" ] && command -v python3 >/dev/null 2>&1; then
   SETTINGS="$CLAUDE_DIR/settings.json" HOOKCMD="$REPO/hooks/arcs-hook" GATECMD="$REPO/hooks/arcs-gate" python3 - <<'PY'
@@ -62,10 +62,17 @@ for event in ("SessionStart", "UserPromptSubmit"):
         hooks.setdefault(event, []).append({"hooks": [{"type": "command", "command": hook}]})
         changed = True
 
+GATE_MATCHER = "Edit|Write|MultiEdit|NotebookEdit"
 if not has("PreToolUse", gate):
     hooks.setdefault("PreToolUse", []).append(
-        {"matcher": "Edit|Write|MultiEdit", "hooks": [{"type": "command", "command": gate}]})
+        {"matcher": GATE_MATCHER, "hooks": [{"type": "command", "command": gate}]})
     changed = True
+else:  # reconcile the matcher on an existing gate entry (e.g. NotebookEdit added later)
+    for g in hooks.get("PreToolUse", []):
+        if not isinstance(g, dict): continue
+        if any(h.get("command") == gate for h in g.get("hooks", []) if isinstance(h, dict)):
+            if g.get("matcher") != GATE_MATCHER:
+                g["matcher"] = GATE_MATCHER; changed = True
 
 if changed:
     if os.path.exists(path):

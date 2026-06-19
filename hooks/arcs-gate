@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
-# arcs-gate — Claude Code PreToolUse hook (matcher: Edit|Write|MultiEdit).
-# In an opted-in project (.arcs/ present), blocks edits to project files until an arc is open.
-# This is the hard enforcement: the agent must `arcs new-arc`/`new-goal` before touching code.
-# Edits to files inside .arcs/ are always allowed. Silent (allow) outside arcs projects.
+# arcs-gate — Claude Code PreToolUse hook (matcher: Edit|Write|MultiEdit|NotebookEdit).
+# In an opted-in project (.arcs/ present), blocks file edits until an arc is open: the agent
+# must `arcs new-arc`/`new-goal` before touching project files. This catches the file-editing
+# tools only — Bash write-redirects (`cat >`, `sed -i`) are NOT gated, so it's enforcement of
+# the normal edit path, not an airtight sandbox. Edits inside .arcs/ are always allowed.
+# Silent (allow) outside arcs projects.
 set -euo pipefail
 
 input="$(cat 2>/dev/null || true)"
@@ -13,11 +15,14 @@ while [ "$dir" != "/" ] && [ ! -d "$dir/.arcs" ]; do dir="$(dirname "$dir")"; do
 [ -d "$dir/.arcs" ] || exit 0
 
 fp="$(printf '%s' "$input" | python3 -c 'import json,sys
-try: print(json.load(sys.stdin).get("tool_input",{}).get("file_path",""))
+try:
+    t=json.load(sys.stdin).get("tool_input",{})
+    print(t.get("file_path") or t.get("notebook_path") or "")
 except Exception: print("")' 2>/dev/null || echo "")"
 
-# Always allow writing the arcs bookkeeping itself.
-case "$fp" in *"/.arcs/"*|*".arcs/"*) exit 0 ;; esac
+# Always allow writing the arcs bookkeeping itself. Anchored to /.arcs/ so a sibling path
+# like notes.arcs/x doesn't slip through (the old loose *".arcs/"* substring matched it).
+case "$fp" in *"/.arcs/"*) exit 0 ;; esac
 
 # Hard breaking-update gate: if check-update flagged this install as below the
 # breaking floor, block all project edits until `arcs update`. Cheap file test,
@@ -33,8 +38,20 @@ if [ -f "$REPO/.arcs-update-required" ]; then
   exit 2
 fi
 
-# Allow once at least one arc/goal is active.
-if grep -rqsE '^status:[[:space:]]*active' "$dir/.arcs" 2>/dev/null; then exit 0; fi
+# Allow once at least one arc/goal is active. Read ONLY canonical arc docs (arc.md and
+# <slug>-goal.md), at the stream level and inside goal substreams, and skip closed dirs
+# (wrapped __NN-…__). Never `grep -r` the tree: closed arcs' workspace/output artifacts can
+# quote "status: active" in prose and would hold the gate open forever (the dogfooding bug).
+gate_f=
+for gate_f in \
+  "$dir"/.arcs/arcs/*/arc.md \
+  "$dir"/.arcs/arcs/*/*-goal.md \
+  "$dir"/.arcs/arcs/*/arcs/*/arc.md \
+  "$dir"/.arcs/arcs/*/arcs/*/*-goal.md; do
+  [ -f "$gate_f" ] || continue              # unmatched glob stays literal -> skip
+  case "$gate_f" in *"/__"*) continue ;; esac   # closed (wrapped) at any level
+  grep -qsE '^status:[[:space:]]*active' "$gate_f" && exit 0
+done
 
 # Otherwise block and tell the agent what to do.
 echo "[arcs] Blocked: this project uses the arcs method but no arc is open. Run \`arcs new-arc <slug>\` (one-off) or \`arcs new-goal <slug>\` first — put the request in its input/, then make this edit. Don't edit project files with .arcs/ empty." >&2

@@ -6,6 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **The gate is enforced again.** `hooks/arcs-gate` used a recursive `grep -r` for
+  `status: active`, which matched stale `status: active` prose inside *closed* arcs'
+  workspace/output artifacts — so the gate stayed open with zero open arcs (reproduced live
+  in this repo). It now reads only canonical open-arc docs (`*/arc.md`, `*/*-goal.md`, stream
+  + goal substreams), skipping closed `__…__` dirs. Also: NotebookEdit is now gated (reads
+  `notebook_path`), and the `.arcs/` allowlist is anchored to `/.arcs/` so a sibling like
+  `notes.arcs/` no longer slips through. `install.sh` reconciles the matcher on existing
+  installs, so `arcs update` picks up NotebookEdit gating.
+
 ## [0.3.1] - 2026-06-18
 
 ### Fixed
