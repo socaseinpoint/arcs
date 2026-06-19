@@ -20,6 +20,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `NN-<slug>` → `__NN-<slug>__` (a goal `NN-@<slug>` → `__NN-@<slug>__`) and sets `status: done`.
   `arcs reopen` reverses it. `arcs close` refuses an empty `output/` (a closed arc must carry a
   self-contained result); `-f` overrides.
+- **Candidates backlog.** `.arcs/candidates/` holds surfaced arc-candidates as numbered
+  `NN-<slug>.md` files, each with a `from:` origin (the arc it bubbled up from). `arcs candidate
+  <slug> [--from <arc>] [text]` captures one; `arcs status` shows a CANDIDATES section; `arcs
+  promote [-g <goal>] <slug>` turns a candidate into a real arc (moves it into the arc's `input/`).
+  A future-work idea surfaces on the board instead of dying in a closed arc's `workspace/`.
 - `rules:` line in `arcs status`; `arcs status` now prints one **STREAM** board.
 - Essence-first landing rewrite (`docs/index.html`): benefit-led hero, quickstart pulled high,
   spec demoted, honest "works with or without an agent" framing. README links to the landing.

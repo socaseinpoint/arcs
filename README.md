@@ -1,8 +1,10 @@
 # arcs
 
 A file-based method for running work. Two primitives — **arc** (atom of work) and **goal** (an arc
-with a purpose that holds nested arcs). State lives in files, not in an ephemeral chat. Tool-independent.
-All work lives in a hidden `.arcs/` — **it never clutters project code**.
+with a purpose that holds nested arcs). Both live in one numbered stream inside `.arcs/arcs/`: arcs are
+`NN-<slug>/`, goals are `NN-@<slug>/` (the `@` marks a goal), sharing one sequence. State lives in
+files, not in an ephemeral chat. Tool-independent. All work lives in a hidden `.arcs/` — **it never
+clutters project code**.
 
 🔗 **Landing:** [arcs-delta.vercel.app](https://arcs-delta.vercel.app)
 
@@ -17,9 +19,12 @@ exec $SHELL                      # reload shell so `arcs` is found
 # 2. use it in any project
 cd my-project
 arcs init                        # creates .arcs/ and asks the arc language (en/ru/es)
-arcs new-goal payments           # start multi-arc work
-arcs new-arc spike-redis         # or a one-off standalone arc
-arcs status                      # see what's done, where you are, and the language
+arcs new-goal payments           # start multi-arc work (NN-@payments)
+arcs new-arc spike-redis         # or a one-off standalone arc (NN-spike-redis)
+arcs candidate retry-webhooks --from spike-redis   # park an idea that popped up mid-work
+arcs promote retry-webhooks      # turn a parked idea into a real arc
+arcs close spike-redis           # wrap a finished arc: NN-slug -> __NN-slug__
+arcs status                      # what's done, where you are, candidates, the language
 arcs lang es                     # change the language anytime
 ```
 Pick the language your arcs are written in at `init` (`en`/`ru`/`es`) — agents then keep the arc
@@ -36,20 +41,28 @@ Needs bash + grep/sed (macOS/Linux). No build step. Full guide: `docs/DEPLOY.md`
 ## In 20 seconds
 ```
 .arcs/                       meta dir at the project root
-  arcs/NN-slug/              atom: input → workspace → output (outward only via output) + arc.md
-  goals/NN-slug/             an arc with a purpose + its own arcs
-    NN-slug-goal.md          brief status, version = leading number (highest = current)
-    input/ workspace/ output/ arcs/
+  arcs/                      one numbered stream — arcs and goals share the sequence
+    NN-slug/                 atom: input → workspace → output (outward only via output) + arc.md
+    NN-@slug/                a goal (@ marks it): an arc with a purpose + its own nested arcs/
+      NN-slug-goal.md        brief status, version = leading number (highest = current)
+      input/ workspace/ output/ arcs/
+    __NN-slug__/             a closed arc/goal (wrapped in __…__ = done)
+  candidates/NN-slug.md      backlog of surfaced ideas, each with a from: line
+  config                     lang= and rules= switches
 ```
 Surface from work → open the current `*-goal.md` → see where you are. Don't get lost.
+An idea that pops up mid-work goes to `candidates/` so it isn't buried in a closed arc's
+`workspace/`; promote it later into a real arc's `input/`. Behavior **rules** have global bodies
+in `<repo>/rules/`, toggled per project via `rules=` in `.arcs/config`.
 
 ## This repo
 ```
 arcs/                        tooling + spec, lives outside your projects
   SPEC.md                    the full method
-  bin/arcs                   CLI: init · new-arc · new-goal · status
+  bin/arcs                   CLI: init · new-arc · new-goal · close · reopen · candidate · promote · rule · status · lang · update
   install.sh                 PATH + Claude skill setup
-  template/.arcs/            skeleton (arcs/ + goals/)
+  rules/                     global rule bodies (toggled per project via .arcs/config rules=)
+  template/README.md         project-README template for an arcs-using repo
   skill/SKILL.md             Claude skill (advises the agent)
   hooks/arcs-hook            reminder hook (SessionStart + UserPromptSubmit)
   hooks/arcs-gate            hard gate (PreToolUse: no edits until an arc is open)

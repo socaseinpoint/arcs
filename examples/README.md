@@ -23,6 +23,8 @@ basic/.arcs/
           arc.md
           input/sources.md          what came in
           output/shortlist.md       ← what the next arc reads (and ONLY this)
+  candidates/                       surfaced arc-candidates, not yet real arcs
+    01-add-rss-feed.md              from: 02-@newsletter
 ```
 
 Run the board from `basic/`:
@@ -33,6 +35,9 @@ ARCS
   01-spike-vite                      [done]    check whether Vite 6 breaks our PostCSS setup
   02-@newsletter                     [active]  ship issue #1 of a weekly dev newsletter
       01-research                        [done]    gather candidate stories for issue #1
+
+CANDIDATES
+  01-add-rss-feed                  from 02-@newsletter
 ```
 
 ### What to notice
@@ -44,3 +49,6 @@ ARCS
   Both live in the same numbered `.arcs/arcs/` stream.
 - **The goal file is the "you are here".** Surfacing from a deep dive, you open
   `02-@newsletter/01-newsletter-goal.md` and immediately see the bottleneck and what's next.
+- **`candidates/` is the backlog.** Ideas that surface mid-arc but aren't worth starting yet
+  land here as `NN-<slug>.md` with a `from:` origin (here `01-add-rss-feed` came `from: 02-@newsletter`).
+  Capture one with `arcs candidate`; when it's ready, `arcs promote add-rss-feed` turns it into a real arc.

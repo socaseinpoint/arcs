@@ -23,7 +23,7 @@ in the arcs repo (skill is symlinked from `<arcs-repo>/skill`, so spec is at `..
      `trace-auth-token-leak`), never `fix`, `stuff`, `task`, `tmp`. The slug is how the work is found later.
 5. Write the user's request/spec into the arc's `input/`. Start a plan/notes file in `workspace/`.
 6. Do the work — keeping notes flowing into `workspace/` as you go, not dumped at the end. Finish an
-   arc by writing `output/` then `arcs close <slug>`.
+   arc by writing `output/` then `arcs close <slug>`. (Future-work idea surfaces mid-task → `arcs candidate`, not a workspace note — see `## Candidates`.)
 
 **Language:** write all arc prose (goal, notes, output) in the project's language — `lang=en|ru|es`
 in `.arcs/config`, also shown by `arcs status`. Field keys (`goal:`, `status:`) stay as-is. The user
@@ -52,6 +52,16 @@ goals directory; arcs and goals share continuous numbering in `.arcs/arcs/`.
   `arcs/` substream + a versioned status file `MM-<slug>-goal.md` (highest number = current; never edit
   old versions, drop a new one).
 
+## Candidates (surfaced future work)
+**THE RULE:** when an idea for FUTURE work surfaces mid-task, do NOT bury it in the current arc's
+`workspace/` — that's private and dies when the arc closes. Capture it as a **candidate** so it surfaces
+on the board, then promote it when you actually start it. Candidates live in `.arcs/candidates/` as
+numbered `NN-<slug>.md` (their own sequence), each carrying a `from:` field (the arc it surfaced from).
+- `arcs candidate <slug> --from <current-arc> [text]` — capture one (text = the idea).
+- `arcs status` shows them in a CANDIDATES section; `arcs candidate list` lists them.
+- `arcs promote [-g <goal>] <slug>` — turn a candidate into a real arc: creates the arc, moves the
+  candidate file into its `input/`, removes it from `candidates/`. Promote only when you start the work.
+
 ## Rules (toggleable behavior layer)
 A rule is a markdown body describing a behavior you must follow. **Bodies are global** — shipped in
 the method repo at `<repo>/rules/<slug>.md` (skill is symlinked from `<arcs-repo>/skill`, so the
@@ -75,6 +85,9 @@ arcs new-arc -g <goal> <slug>  arc inside a goal's substream (one step)
 arcs new-arc <slug>            standalone arc: NN-<slug>/ (work with no purpose)
 arcs close [-g <goal>] <slug>  finish: status: done + wrap name in __…__ (refuses an empty output/; -f overrides)
 arcs reopen [-g <goal>] <slug> undo close: __…__ → unwrapped name, status back to active
+arcs candidate <slug> [--from <arc>]  capture a surfaced future-work idea into .arcs/candidates/
+arcs candidate list            list captured candidates
+arcs promote [-g <goal>] <slug>  candidate → real arc (creates it, moves the file into input/, drops from candidates/)
 arcs rule list                 list global + local rules with on/off state
 arcs rule on/off <slug>        toggle a rule (edits the `rules=` switch in .arcs/config)
 arcs rule add <slug>           scaffold a LOCAL custom rule (.arcs/rules/<slug>.md, off until enabled)

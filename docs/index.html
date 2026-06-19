@@ -104,6 +104,7 @@ cd my-project &amp;&amp; <span class="k">arcs init</span>      <span class="c">#
 <span class="c"># 3 · then just work. the agent opens arcs as it goes:</span>
 <span class="k">arcs new-goal</span> payments         <span class="c"># multi-step thread → NN-@payments</span>
 <span class="k">arcs new-arc</span> -g payments stripe <span class="c"># one step inside it</span>
+<span class="k">arcs candidate</span> add-retries --from stripe  <span class="c"># park an idea that popped up → shows on the board</span>
 <span class="k">arcs close</span> -g payments stripe   <span class="c"># done → writes output/, renames to __NN-stripe__</span>
 <span class="k">arcs status</span>                    <span class="c"># the board — where everything stands</span></pre>
           <p class="prose dim"><span data-l="ru"><b>Без агента?</b> Те же команды руками — метод не зависит от тулинга. <b>С агентом?</b> Поставил скилл + хуки и забыл: агент сам открывает арку перед работой и держит <code>output/</code> чистым. Апдейт — <code>arcs update</code> из любого места.</span><span data-l="en"><b>No agent?</b> Run the same commands by hand — the method doesn't depend on tooling. <b>With an agent?</b> Install the skill + hooks and forget it: the agent opens an arc before working and keeps <code>output/</code> clean. Update with <code>arcs update</code> from anywhere.</span></p>
@@ -227,7 +228,10 @@ cd my-project &amp;&amp; <span class="k">arcs init</span>      <span class="c">#
 <pre>STREAM
   01-spike-vite                      <span class="a">[done]</span>    check whether Vite 6 breaks our PostCSS setup
   02-@newsletter                     <span class="a">[active]</span>  ship issue #1 of a weekly dev newsletter
-      01-research                      <span class="a">[done]</span>    gather candidate stories for issue #1</pre>
+      01-research                      <span class="a">[done]</span>    gather candidate stories for issue #1
+
+CANDIDATES <span class="c"># surfaced arc-candidates, promote when ready</span>
+  01-add-rss-feed                  <span class="a">from 02-@newsletter</span></pre>
           </figure>
         </div>
       </div>

@@ -60,6 +60,16 @@ next_num() {   # next zero-padded NN — counts open NN-<slug>/ AND closed __NN-
   printf "%02d" $((max + 1))
 }
 
+next_num_file() {   # next NN among NN-<slug>.md files in $1 (candidates have their own sequence)
+  local dir="$1" max=0 n base
+  if [ -d "$dir" ]; then
+    for f in "$dir"/[0-9][0-9]-*.md; do [ -f "$f" ] || continue
+      base=$(basename "$f"); n=${base%%-*}; n=$((10#$n)); [ "$n" -gt "$max" ] && max=$n
+    done
+  fi
+  printf "%02d" $((max + 1))
+}
+
 # Templates. Field KEYS (goal:/status:/version:) stay English so the parser is language-agnostic;
 # only the human placeholder text + headings are localized.
 arc_md() {     # $1=path $2=slug $3=lang
@@ -234,6 +244,13 @@ cmd_status() {
       printf "  %-36s %-9s %s\n" "$nm" "[$(field "$d/arc.md" status)]" "$(field "$d/arc.md" goal)"
     fi
   done
+  if [ -d "$b/candidates" ] && [ -n "$(ls -A "$b/candidates" 2>/dev/null)" ]; then
+    echo "CANDIDATES (surfaced arc-candidates — promote with: arcs promote <slug>)"
+    local cf frm; for cf in "$b"/candidates/*.md; do [ -f "$cf" ] || continue
+      frm=$(field "$cf" from)
+      printf "  %-36s %s\n" "$(basename "$cf" .md)" "${frm:+from $frm}"
+    done
+  fi
 }
 
 cmd_update() {
@@ -259,7 +276,10 @@ cmd_help() { sed -n '2,4p' "$0" | sed 's/^# \{0,1\}//'; cat <<EOF
   arcs new-goal <slug>              new goal (NN-@slug) in the shared .arcs/arcs/ stream
   arcs close [-g <goal>] [-f] <slug> mark an arc done: rename NN-slug -> __NN-slug__ (needs non-empty output/; -f overrides)
   arcs reopen [-g <goal>] <slug>    undo a close: __NN-slug__ -> NN-slug
-  arcs rule [list|on|off|add] ...   toggle behavior rules in .arcs/rules/
+  arcs rule [list|on|off|add] ...   toggle behavior rules (global bodies, .arcs/config switch)
+  arcs candidate <slug> [--from <arc>] [text]  capture a surfaced arc-candidate in .arcs/candidates/
+  arcs candidate list               list candidates (also shown by arcs status)
+  arcs promote [-g <goal>] <slug>   turn a candidate into a real arc (moves it into the arc's input/)
   arcs status                       print the board
   arcs update                       git pull the method + re-wire skill/hooks
 EOF
@@ -357,6 +377,50 @@ cmd_reopen() {
   echo "arcs: reopened $open"
 }
 
+cmd_candidate() {   # surfaced arc-candidates live in .arcs/candidates/NN-<slug>.md (numbered, with a from:)
+  [ -d .arcs ] || die "no .arcs/ here — run: arcs init"
+  local d=".arcs/candidates"
+  if [ "${1:-list}" = list ]; then
+    if [ ! -d "$d" ] || [ -z "$(ls -A "$d" 2>/dev/null)" ]; then echo "candidates: (none)"; return; fi
+    local f frm; for f in "$d"/*.md; do [ -f "$f" ] || continue
+      frm=$(grep -m1 -E '^from:' "$f" 2>/dev/null | sed -E 's/^from:[[:space:]]*//' || true)
+      printf "  %-32s %s\n" "$(basename "$f" .md)" "${frm:+from $frm}"
+    done; return
+  fi
+  # capture: arcs candidate <slug> [--from <arc>] [text...]
+  local slug="" from="" text=""
+  while [ $# -gt 0 ]; do case "$1" in
+    --from) from="${2:-}"; shift 2 ;;
+    *) if [ -z "$slug" ]; then slug="$1"; else text="$text $1"; fi; shift ;;
+  esac; done
+  [ -n "$slug" ] || die "usage: arcs candidate <slug> [--from <arc>] [text]  |  arcs candidate list"
+  mkdir -p "$d"; local nn; nn=$(next_num_file "$d"); local f="$d/$nn-$slug.md"
+  { printf '# %s\n' "$slug"; [ -n "$from" ] && printf 'from: %s\n' "$from"; printf '\n'
+    [ -n "$text" ] && printf '%s\n' "${text# }"; } > "$f"
+  echo "arcs: captured candidate $f${from:+ (from $from)} — promote with: arcs promote $nn-$slug"
+}
+
+cmd_promote() {   # turn a candidate into a real arc: create arc + move the file into its input/
+  [ -d .arcs ] || die "no .arcs/ here"
+  local goal_slug="" key="" newslug=""
+  while [ $# -gt 0 ]; do case "$1" in
+    -g) goal_slug="${2:-}"; shift 2 ;;
+    *)  if [ -z "$key" ]; then key="$1"; else newslug="$1"; fi; shift ;;
+  esac; done
+  [ -n "$key" ] || die "usage: arcs promote [-g <goal>] <candidate NN-or-slug> [<new-arc-slug>]"
+  local d=".arcs/candidates" f
+  f=$(ls "$d/$key.md" "$d/$key"-*.md "$d"/*-"$key".md 2>/dev/null | head -1) || true
+  [ -n "$f" ] && [ -f "$f" ] || die "candidate '$key' not found in $d/"
+  local base; base=$(basename "$f" .md); local cslug="${base#*-}"
+  [ -z "$newslug" ] && newslug="$cslug"
+  if [ -n "$goal_slug" ]; then cmd_new_arc -g "$goal_slug" "$newslug"; else cmd_new_arc "$newslug"; fi
+  local sd dir; sd=$(_arc_searchdir "$goal_slug")
+  dir=$(ls -d "$sd"/[0-9][0-9]-"$newslug"/ 2>/dev/null | sort | tail -1); dir="${dir%/}"
+  [ -n "$dir" ] || die "could not locate the new arc for '$newslug'"
+  mv "$f" "$dir/input/$base.md"
+  echo "arcs: promoted candidate '$base' → $dir/input/$base.md (removed from candidates/)"
+}
+
 # --- dispatch --------------------------------------------------------------
 sub="${1:-help}"; shift || true
 case "$sub" in
@@ -367,6 +431,8 @@ case "$sub" in
   close)     cmd_close "$@" ;;
   reopen)    cmd_reopen "$@" ;;
   rule)      cmd_rule "$@" ;;
+  candidate) cmd_candidate "$@" ;;
+  promote)   cmd_promote "$@" ;;
   status)    cmd_status "$@" ;;
   update)    cmd_update "$@" ;;
   help|-h|--help) cmd_help ;;

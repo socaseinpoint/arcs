@@ -12,6 +12,7 @@ All method work lives in a hidden `.arcs/` at the project root — **so it never
   .arcs/
     config           the arc language (en|ru|es) + `rules=` toggle line
     rules/           LOCAL rule overrides / custom rules (built-ins live globally in the method repo)
+    candidates/      surfaced arc-candidates, numbered NN-<slug>.md (the backlog of future arcs)
     arcs/            ONE continuous stream:
       NN-<slug>/       an arc  (work without a purpose)
       NN-@<slug>/      a goal  (an arc with a purpose) — @ marks it
@@ -103,6 +104,37 @@ The current `MM-<slug>-goal.md` always answers briefly: the goal, which sub-arcs
 
 ---
 
+## Candidates — the backlog of surfaced arcs
+An idea that surfaces mid-work — a candidate for a **future** arc — must not be buried in the current
+arc's `workspace/`. `workspace/` is private and **disposable: it dies with the arc** and vanishes from
+view the moment the arc closes. So a future-work idea has to be **promoted OUT** — surfaced onto the
+board — not left to rot in a workspace note.
+
+`.arcs/candidates/` sits beside `.arcs/arcs/`. It holds surfaced arc-candidates as numbered files
+`NN-<slug>.md`, with **their own numbering sequence**, separate from the work stream's `NN`. Each
+candidate carries a `from:` field — the arc it surfaced from, a traceable origin — plus a free-form
+body describing the idea:
+```markdown
+# NN-<slug>
+from: <arc it surfaced from>
+
+<free-form body — the idea>
+```
+
+| | Role |
+|---|---|
+| `arcs candidate <slug> [--from <arc>] [text]` | capture a surfaced idea as `candidates/NN-<slug>.md` |
+| `arcs candidate list` | list the backlog |
+| `arcs status` → CANDIDATES section | each `NN-<slug>` with `from <arc>` shows on the board |
+
+**Promote pulls one into the work stream.** `arcs promote [-g <goal>] <NN-or-slug> [<new-slug>]` turns a
+candidate into a real arc: it creates the arc (top stream, or a goal's substream with `-g`), **moves**
+the candidate file into the new arc's `input/`, and removes it from `candidates/`. The candidate's body
+becomes the new arc's seed — origin preserved.
+
+**Principle:** spawned future-work becomes a **candidate** (surfaced, on the board) — never a buried
+`workspace/` note. The board's CANDIDATES section is the backlog; `promote` pulls one into the work stream.
+
 ## Rules — optional behavior layer
 The base method (arc · goal · encapsulation · versioning) is tooling-independent and complete on its
 own. **Rules** are an opt-in layer on top: per-project behaviors an agent follows while working. They
@@ -166,6 +198,9 @@ arcs new-goal <slug>          goal in the stream → NN-@<slug>
 arcs new-arc -g <goal> <slug> sub-arc inside a goal's nested arcs/ (local 01,02…)
 arcs close [-g <goal>] <slug> close: wrap in __…__ + status done (goal → its status doc; refuses empty output/; -f overrides)
 arcs reopen [-g <goal>] <slug> reopen: strip __…__ + status active
+arcs candidate <slug> [--from <arc>] [text]  surface a future-work idea → candidates/NN-<slug>.md
+arcs candidate list           list the candidates backlog
+arcs promote [-g <goal>] <NN-or-slug> [<new-slug>]  candidate → real arc (moves it into the arc's input/)
 arcs rule list                global + local rules, on/off read from .arcs/config
 arcs rule on|off <slug>       add/remove the slug in config's rules= line
 arcs rule add <slug>          scaffold a LOCAL custom rule under .arcs/rules/ (off until rule on)
