@@ -7,6 +7,18 @@ set -euo pipefail
 # --- helpers ---------------------------------------------------------------
 die() { echo "arcs: $*" >&2; exit 1; }
 
+slugify() {   # user slug -> glob-safe kebab: lowercase, spaces/'/'/'_' -> '-', drop other
+  printf '%s' "$1" \
+    | tr '[:upper:]' '[:lower:]' \
+    | tr ' /_' '---' \
+    | tr -cd 'a-z0-9-' \
+    | tr -s '-' \
+    | sed -E 's/^-+//; s/-+$//'    # unsafe chars, collapse/trim '-' (keeps globs intact)
+}
+
+# escape a string for safe use as a sed replacement (& and the delimiter are special)
+sed_repl_escape() { printf '%s' "$1" | sed -e 's/[&|\\]/\\&/g'; }
+
 repo_dir() {   # absolute path of the arcs repo (this script lives in <repo>/bin)
   local src="${BASH_SOURCE[0]}" d
   while [ -h "$src" ]; do
@@ -51,7 +63,7 @@ config_set_rules() {   # $1 = new comma list (may be empty)
 next_num() {   # next zero-padded NN — counts open NN-<slug>/ AND closed __NN-<slug>__/ entries
   local dir="$1" max=0 n base
   if [ -d "$dir" ]; then
-    for d in "$dir"/[0-9][0-9]-*/ "$dir"/__[0-9][0-9]-*__/; do
+    for d in "$dir"/[0-9][0-9]*-*/ "$dir"/__[0-9][0-9]*-*__/; do   # 2+ digit NN (past 99)
       [ -d "$d" ] || continue
       base=$(basename "$d"); base=${base#__}; n=${base%%-*}; n=$((10#$n))
       [ "$n" -gt "$max" ] && max=$n
@@ -63,7 +75,7 @@ next_num() {   # next zero-padded NN — counts open NN-<slug>/ AND closed __NN-
 next_num_file() {   # next NN among NN-<slug>.md files in $1 (candidates have their own sequence)
   local dir="$1" max=0 n base
   if [ -d "$dir" ]; then
-    for f in "$dir"/[0-9][0-9]-*.md; do [ -f "$f" ] || continue
+    for f in "$dir"/[0-9][0-9]*-*.md; do [ -f "$f" ] || continue   # 2+ digit NN (past 99)
       base=$(basename "$f"); n=${base%%-*}; n=$((10#$n)); [ "$n" -gt "$max" ] && max=$n
     done
   fi
@@ -205,12 +217,21 @@ cmd_lang() {
 
 cmd_new_arc() {
   local goal_slug="" slug b dir nn lang
-  if [ "${1:-}" = "-g" ]; then goal_slug="$2"; shift 2; fi
-  slug="${1:-}"; [ -n "$slug" ] || die "usage: arcs new-arc [-g <goal-slug>] <slug>"
+  if [ "${1:-}" = "-g" ]; then
+    goal_slug="$(slugify "${2:-}")"; [ -n "$goal_slug" ] || die "usage: arcs new-arc -g <goal-slug> <slug>"
+    shift 2
+  fi
+  slug="$(slugify "${1:-}")"; [ -n "$slug" ] || die "usage: arcs new-arc [-g <goal-slug>] <slug>"
   b=$(base_dir); lang=$(lang_of)
   if [ -n "$goal_slug" ]; then
-    local gdir; gdir=$(ls -d "$b"/arcs/[0-9][0-9]-@"$goal_slug"/ 2>/dev/null | head -1) || true
-    [ -n "$gdir" ] || die "goal '$goal_slug' not found in $b/arcs/ (goal dirs are NN-@$goal_slug)"
+    local gdir; gdir=$(ls -d "$b"/arcs/[0-9][0-9]*-@"$goal_slug"/ 2>/dev/null | head -1) || true
+    if [ -z "$gdir" ]; then
+      # name an actionable reason: a closed goal won't take new sub-arcs (reopen it first)
+      if ls -d "$b"/arcs/__[0-9][0-9]*-@"$goal_slug"__/ >/dev/null 2>&1; then
+        die "goal '$goal_slug' is closed — reopen it first: arcs reopen $goal_slug"
+      fi
+      die "goal '$goal_slug' not found in $b/arcs/ (goal dirs are NN-@$goal_slug)"
+    fi
     dir="${gdir%/}/arcs"
   else
     dir="$b/arcs"
@@ -222,8 +243,8 @@ cmd_new_arc() {
 }
 
 cmd_new_goal() {
-  local slug="${1:-}" b nn dir lang
-  [ -n "$slug" ] || die "usage: arcs new-goal <slug>"
+  local slug b nn dir lang
+  slug="$(slugify "${1:-}")"; [ -n "$slug" ] || die "usage: arcs new-goal <slug>"
   b=$(base_dir); lang=$(lang_of)
   nn=$(next_num "$b/arcs")          # shared numbering with standalone arcs
   dir="$b/arcs/$nn-@$slug"          # @ marks a goal (arc with a purpose) in the stream
@@ -370,7 +391,7 @@ cmd_help() { sed -n '2,4p' "$0" | sed 's/^# \{0,1\}//'; cat <<EOF
   arcs new-goal <slug>              new goal (NN-@slug) in the shared .arcs/arcs/ stream
   arcs close [-g <goal>] [-f] <slug> mark an arc done: rename NN-slug -> __NN-slug__ (needs non-empty output/; -f overrides)
   arcs reopen [-g <goal>] <slug>    undo a close: __NN-slug__ -> NN-slug
-  arcs supersede [-g <goal>] <old> <new>  close old (no output guard) + create new linked by supersedes: + seed input/from-<old>
+  arcs supersede [-g <goal>] <old> <new>  close old (no output guard) + create new (preserves goal-ness) linked by supersedes: + seed input/from-<old>
   arcs rule [list|on|off|add] ...   toggle behavior rules (global bodies, .arcs/config switch)
   arcs candidate <slug> [--from <arc>] [text]  capture a surfaced arc-candidate in .arcs/candidates/
   arcs candidate list               list candidates (also shown by arcs status)
@@ -424,28 +445,34 @@ EOF
 }
 
 # resolve the arcs/ dir to search (a goal's arcs/, or the standalone .arcs/arcs/)
+# finds open NN-@slug first, falls back to closed __NN-@slug__ so -g ops work on closed goals
 _arc_searchdir() {   # $1=goal_slug (may be empty) -> echoes dir or dies
-  local b=".arcs" gdir
+  local b=".arcs" g gdir
   if [ -n "${1:-}" ]; then
-    gdir=$(ls -d "$b"/arcs/[0-9][0-9]-@"$1"/ 2>/dev/null | head -1) || true
-    [ -n "$gdir" ] || die "goal '$1' not found in $b/arcs/ (goal dirs are NN-@$1)"
+    g="$(slugify "$1")"
+    gdir=$(ls -d "$b"/arcs/[0-9][0-9]*-@"$g"/ 2>/dev/null | head -1) || true
+    [ -n "$gdir" ] || gdir=$(ls -d "$b"/arcs/__[0-9][0-9]*-@"$g"__/ 2>/dev/null | head -1) || true
+    [ -n "$gdir" ] || die "goal '$1' not found in $b/arcs/ (goal dirs are NN-@$g, closed __NN-@$g__)"
     echo "${gdir%/}/arcs"
   else echo "$b/arcs"; fi
 }
 
 cmd_close() {
-  local goal_slug="" force=0 slug="" sd dir name
+  local goal_slug="" force=0 slug="" sd dir gdir adir name
   while [ $# -gt 0 ]; do
     case "$1" in
-      -g)         goal_slug="$2"; shift 2 ;;
+      -g)         goal_slug="$(slugify "${2:-}")"; [ -n "$goal_slug" ] || die "arcs close: -g needs a goal slug"; shift 2 ;;
       -f|--force) force=1; shift ;;
-      *)          slug="$1"; shift ;;
+      *)          slug="$(slugify "$1")"; shift ;;
     esac
   done
   [ -n "$slug" ] || die "usage: arcs close [-g <goal>] [-f] <slug>"
   [ -d .arcs ] || die "no .arcs/ here"
   sd=$(_arc_searchdir "$goal_slug")
-  dir=$(ls -d "$sd"/[0-9][0-9]-"$slug"/ "$sd"/[0-9][0-9]-@"$slug"/ 2>/dev/null | head -1) || true
+  # arc-vs-goal: prefer the goal if the slug names one, else the plain arc (deterministic, no head -1 coin-flip)
+  gdir=$(ls -d "$sd"/[0-9][0-9]*-@"$slug"/ 2>/dev/null | head -1) || true
+  adir=$(ls -d "$sd"/[0-9][0-9]*-"$slug"/ 2>/dev/null | head -1) || true
+  if [ -n "$gdir" ]; then dir="$gdir"; else dir="$adir"; fi
   [ -n "$dir" ] || die "open arc/goal '$slug' not found in $sd/ (already closed?)"
   dir="${dir%/}"; name=$(basename "$dir")
   # an arc closes with a self-contained output/ — refuse to close it empty (override: -f)
@@ -460,12 +487,18 @@ cmd_close() {
 }
 
 cmd_reopen() {
-  local goal_slug="" slug sd dir name open
-  if [ "${1:-}" = "-g" ]; then goal_slug="$2"; shift 2; fi
-  slug="${1:-}"; [ -n "$slug" ] || die "usage: arcs reopen [-g <goal>] <slug>"
+  local goal_slug="" slug sd dir gdir adir name open
+  if [ "${1:-}" = "-g" ]; then
+    goal_slug="$(slugify "${2:-}")"; [ -n "$goal_slug" ] || die "arcs reopen: -g needs a goal slug"
+    shift 2
+  fi
+  slug="$(slugify "${1:-}")"; [ -n "$slug" ] || die "usage: arcs reopen [-g <goal>] <slug>"
   [ -d .arcs ] || die "no .arcs/ here"
   sd=$(_arc_searchdir "$goal_slug")
-  dir=$(ls -d "$sd"/__[0-9][0-9]-"$slug"__/ "$sd"/__[0-9][0-9]-@"$slug"__/ 2>/dev/null | head -1) || true
+  # arc-vs-goal: prefer the goal if the slug names one, else the plain arc (deterministic)
+  gdir=$(ls -d "$sd"/__[0-9][0-9]*-@"$slug"__/ 2>/dev/null | head -1) || true
+  adir=$(ls -d "$sd"/__[0-9][0-9]*-"$slug"__/ 2>/dev/null | head -1) || true
+  if [ -n "$gdir" ]; then dir="$gdir"; else dir="$adir"; fi
   [ -n "$dir" ] || die "closed arc/goal '$slug' not found in $sd/"
   dir="${dir%/}"; name=$(basename "$dir"); open="${name#__}"; open="${open%__}"
   mv "$dir" "$sd/$open"
@@ -485,11 +518,12 @@ cmd_candidate() {   # surfaced arc-candidates live in .arcs/candidates/NN-<slug>
     done; return
   fi
   # capture: arcs candidate <slug> [--from <arc>] [text...]
-  local slug="" from="" text=""
+  local slug="" from="" text="" rawslug=""
   while [ $# -gt 0 ]; do case "$1" in
-    --from) from="${2:-}"; shift 2 ;;
-    *) if [ -z "$slug" ]; then slug="$1"; else text="$text $1"; fi; shift ;;
+    --from) from="$(slugify "${2:-}")"; shift; [ $# -gt 0 ] && shift ;;
+    *) if [ -z "$rawslug" ]; then rawslug="$1"; else text="$text $1"; fi; shift ;;
   esac; done
+  slug="$(slugify "$rawslug")"
   [ -n "$slug" ] || die "usage: arcs candidate <slug> [--from <arc>] [text]  |  arcs candidate list"
   mkdir -p "$d"; local nn; nn=$(next_num_file "$d"); local f="$d/$nn-$slug.md"
   { printf '# %s\n' "$slug"; [ -n "$from" ] && printf 'from: %s\n' "$from"; printf '\n'
@@ -501,7 +535,7 @@ cmd_promote() {   # turn a candidate into a real arc: create arc + move the file
   [ -d .arcs ] || die "no .arcs/ here"
   local goal_slug="" key="" newslug=""
   while [ $# -gt 0 ]; do case "$1" in
-    -g) goal_slug="${2:-}"; shift 2 ;;
+    -g) goal_slug="$(slugify "${2:-}")"; shift; [ $# -gt 0 ] && shift ;;
     *)  if [ -z "$key" ]; then key="$1"; else newslug="$1"; fi; shift ;;
   esac; done
   [ -n "$key" ] || die "usage: arcs promote [-g <goal>] <candidate NN-or-slug> [<new-arc-slug>]"
@@ -510,9 +544,10 @@ cmd_promote() {   # turn a candidate into a real arc: create arc + move the file
   [ -n "$f" ] && [ -f "$f" ] || die "candidate '$key' not found in $d/"
   local base; base=$(basename "$f" .md); local cslug="${base#*-}"
   [ -z "$newslug" ] && newslug="$cslug"
+  newslug="$(slugify "$newslug")"; [ -n "$newslug" ] || die "promote: empty new-arc slug after sanitizing"
   if [ -n "$goal_slug" ]; then cmd_new_arc -g "$goal_slug" "$newslug"; else cmd_new_arc "$newslug"; fi
   local sd dir; sd=$(_arc_searchdir "$goal_slug")
-  dir=$(ls -d "$sd"/[0-9][0-9]-"$newslug"/ 2>/dev/null | sort | tail -1); dir="${dir%/}"
+  dir=$(ls -d "$sd"/[0-9][0-9]*-"$newslug"/ 2>/dev/null | sort | tail -1) || true; dir="${dir%/}"
   [ -n "$dir" ] || die "could not locate the new arc for '$newslug'"
   mv "$f" "$dir/input/$base.md"
   echo "arcs: promoted candidate '$base' → $dir/input/$base.md (removed from candidates/)"
@@ -522,24 +557,41 @@ cmd_supersede() {   # close <old> (no output guard) + create <new> in the same s
   [ -d .arcs ] || die "no .arcs/ here"
   local goal_slug="" old="" new=""
   while [ $# -gt 0 ]; do case "$1" in
-    -g) goal_slug="${2:-}"; shift 2 ;;
+    -g) goal_slug="$(slugify "${2:-}")"; shift; [ $# -gt 0 ] && shift ;;
     *)  if [ -z "$old" ]; then old="$1"; elif [ -z "$new" ]; then new="$1"; fi; shift ;;
   esac; done
-  [ -n "$old" ] && [ -n "$new" ] || die "usage: arcs supersede [-g <goal>] <old-slug> <new-slug>"
   old="${old#__}"; old="${old%__}"               # refs are bare slugs; tolerate __…__
-  # 1. close <old> with -f (a superseded arc may legitimately carry no output)
+  old="$(slugify "$old")"; new="$(slugify "$new")"
+  [ -n "$old" ] && [ -n "$new" ] || die "usage: arcs supersede [-g <goal>] <old-slug> <new-slug>"
+  # is <old> a goal? (open NN-@old or closed __NN-@old__) — supersede must preserve goal-ness.
+  # goals live in the standalone stream, never inside a goal substream, so a goal supersede ignores -g.
+  local sd was_goal=""
+  sd=$(_arc_searchdir "$goal_slug")
+  # check each glob separately: `ls A B` exits non-zero when *either* operand is unmatched
+  if ls -d "$sd"/[0-9][0-9]*-@"$old"/ >/dev/null 2>&1 \
+     || ls -d "$sd"/__[0-9][0-9]*-@"$old"__/ >/dev/null 2>&1; then was_goal=1; fi
+  # 1. close <old> with -f (a superseded arc/goal may legitimately carry no output)
   if [ -n "$goal_slug" ]; then cmd_close -g "$goal_slug" -f "$old"; else cmd_close -f "$old"; fi
-  # 2. create <new> in the same scope (same goal substream, or the standalone stream)
-  if [ -n "$goal_slug" ]; then cmd_new_arc -g "$goal_slug" "$new"; else cmd_new_arc "$new"; fi
-  local sd dir; sd=$(_arc_searchdir "$goal_slug")
-  dir=$(ls -d "$sd"/[0-9][0-9]-"$new"/ 2>/dev/null | sort | tail -1); dir="${dir%/}"
-  [ -n "$dir" ] || die "could not locate the new arc for '$new'"
-  # 3. write supersedes: <old> (real field, after status:) — replaces the commented template line
-  local tmp; tmp="$(mktemp)"
-  sed -E "/^# supersedes:/d; s|^status:.*|&\nsupersedes: $old|" "$dir/arc.md" > "$tmp" && mv "$tmp" "$dir/arc.md"
-  # 4. seed input/from-<old>.md with a one-line pointer back to the superseded arc
-  printf '# from %s\n\nThis arc supersedes %s (closed). See __%s__/ for the predecessor.\n' \
-    "$old" "$old" "$old" > "$dir/input/from-$old.md"
+  # 2. create <new>, preserving kind: a goal supersedes into a goal, an arc into an arc
+  local dir nf
+  if [ -n "$was_goal" ]; then
+    cmd_new_goal "$new"
+    dir=$(ls -d .arcs/arcs/[0-9][0-9]*-@"$new"/ 2>/dev/null | sort | tail -1) || true; dir="${dir%/}"
+    [ -n "$dir" ] || die "could not locate the new goal for '$new'"
+    nf="$dir/$new-goal.md"                       # supersedes: belongs in the goal-doc, not arc.md
+  else
+    if [ -n "$goal_slug" ]; then cmd_new_arc -g "$goal_slug" "$new"; else cmd_new_arc "$new"; fi
+    dir=$(ls -d "$sd"/[0-9][0-9]*-"$new"/ 2>/dev/null | sort | tail -1) || true; dir="${dir%/}"
+    [ -n "$dir" ] || die "could not locate the new arc for '$new'"
+    nf="$dir/arc.md"
+  fi
+  # 3. write supersedes: <old> (real field, after status:) — replaces the commented template line.
+  #    escape <old> for sed: &, the | delimiter, and \ are special in the replacement text.
+  local tmp old_esc; tmp="$(mktemp)"; old_esc="$(sed_repl_escape "$old")"
+  sed -E "/^# supersedes:/d; s|^status:.*|&\nsupersedes: $old_esc|" "$nf" > "$tmp" && mv "$tmp" "$nf"
+  # 4. seed input/from-<old>.md with a one-line pointer back to the superseded arc/goal
+  printf '# from %s\n\nThis %s supersedes %s (closed). See __%s__/ for the predecessor.\n' \
+    "$old" "$([ -n "$was_goal" ] && echo goal || echo arc)" "$old" "$old" > "$dir/input/from-$old.md"
   echo "arcs: superseded $old → $(basename "$dir") (closed $old, supersedes: $old, seeded input/from-$old.md)"
 }
 
