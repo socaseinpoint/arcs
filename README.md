@@ -43,6 +43,23 @@ just a one-line `update available: arcs X` on the board. A release that breaks c
 
 Needs bash + grep/sed (macOS/Linux). No build step. Full guide: `docs/DEPLOY.md`. Method: `SPEC.md`.
 
+## Dashboard
+
+A read-only viewer over every `.arcs/` project on your machine — a presentation layer,
+separate from the method: it only **reads** `.arcs/`, never writes.
+
+```bash
+arcs dashboard                   # scan $HOME, build a static page, open it in the browser
+arcs dashboard <root...>         # or scan only the given roots
+```
+
+Generates one self-contained HTML at `~/.cache/arcs/dashboard.html` — no server, no deps
+beyond bash + git. Portfolio overview + per-project lenses (board · lineage · timeline ·
+map), a by-day **digest** of arcs opened/closed (read from git), a **recent work** surface,
+candidates, and a detail modal that shows each arc's real `arc.md` + `output/`/`workspace/`
+files. Newest-first, responsive (open the cached file over your LAN to read it on a phone).
+Re-run to refresh.
+
 ## In 20 seconds
 ```
 .arcs/                       meta dir at the project root

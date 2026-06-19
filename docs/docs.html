@@ -21,6 +21,7 @@
         <a href="#concepts">concepts</a>
         <a href="#goals">goals</a>
         <a href="#commands">commands</a>
+        <a href="#dashboard">dashboard</a>
         <a href="#setup">setup</a>
       </span>
       <a href="https://github.com/socaseinpoint/arcs" target="_blank" rel="noopener">github ↗</a>
@@ -45,6 +46,7 @@
           <li><a href="#commands">Command reference</a></li>
           <li><a href="#setup">Setup &amp; install</a></li>
           <li><a href="#example">Worked example</a></li>
+          <li><a href="#dashboard">Dashboard</a></li>
         </ol>
       </nav>
       <p class="docs-nav-foot mono"><a href="index.html">← back to landing</a></p>
@@ -325,6 +327,7 @@
             <tr><td><code>arcs promote [-g &lt;goal&gt;] &lt;NN-or-slug&gt; [&lt;new-slug&gt;]</code></td><td>turn a candidate into a real arc — moves the file into the new arc's <code>input/</code>.</td></tr>
             <tr><td><code>arcs rule [list|on|off|add] &lt;slug&gt;</code></td><td>toggle behavior rules (global bodies, <code>.arcs/config</code> switch).</td></tr>
             <tr><td><code>arcs status</code></td><td>print the board — one STREAM of arcs + goals, plus CANDIDATES.</td></tr>
+            <tr><td><code>arcs dashboard [root…]</code></td><td>build a read-only HTML viewer over every <code>.arcs/</code> on disk and open it (see §10).</td></tr>
             <tr><td><code>arcs update</code></td><td>git pull the method + re-wire skill/hooks.</td></tr>
             <tr><td><code>arcs help</code></td><td>the command list.</td></tr>
           </tbody>
@@ -512,6 +515,40 @@ CANDIDATES (surfaced arc-candidates — promote with: arcs promote &lt;slug&gt;)
         <code>arcs close -g newsletter research</code>. The next <code>arcs status</code> shows
         <code>1/3 ✓</code> — read straight from disk. The drafting arc reads only
         <code>__01-research__/output/shortlist.md</code> — never its workspace.
+      </p>
+    </section>
+
+    <!-- DASHBOARD -->
+    <section id="dashboard" class="docs-section reveal">
+      <h2><span class="sec-num mono">10</span> Dashboard</h2>
+      <p>
+        A <b>presentation layer</b> on top of arcs — strictly separate from the method. It only
+        <b>reads</b> <code>.arcs/</code> directories, never writes them; the core can be explained,
+        versioned, and shipped without it, and vice-versa.
+      </p>
+      <figure>
+        <div class="figcap"><span>$ arcs dashboard</span><span>build &amp; open</span></div>
+<pre>$ arcs dashboard                 <span class="c"># scan $HOME, build the page, open it</span>
+arcs: dashboard → ~/.cache/arcs/dashboard.html
+$ arcs dashboard ~/work ~/oss    <span class="c"># or scan only the roots you name</span></pre>
+      </figure>
+      <p>
+        It walks the disk for every <code>.arcs/arcs/</code>, parses arcs + git, and writes one
+        self-contained HTML to <code>~/.cache/arcs/dashboard.html</code> — no server, no build, no
+        deps beyond <code>bash</code> + <code>git</code>. Re-run to refresh. (arcs' own
+        <code>examples/</code> and <code>template/</code> fixtures are excluded.)
+      </p>
+      <ul class="docs-list">
+        <li><b>Portfolio overview</b> — pulse across all projects, a <b>recent work</b> feed, and a project grid.</li>
+        <li><b>Digest</b> — a by-day feed of arcs <b>opened</b> and <b>closed</b> (read from git), candidates on top.</li>
+        <li><b>Per-project lenses</b> — board (the full stream), lineage, timeline, map; newest-first.</li>
+        <li><b>Detail modal</b> — each arc's real <code>arc.md</code> + <code>output/</code>/<code>workspace/</code> files inline, so you read <em>what happened</em>; full-screen on mobile.</li>
+      </ul>
+      <p class="dim">
+        Distribution is a local static viewer by design — your <code>.arcs/</code> never leaves the
+        machine. To read it on a phone, serve the cached file over your LAN
+        (<code>cd ~/.cache/arcs &amp;&amp; python3 -m http.server 8799 --bind 0.0.0.0</code>) and open
+        <code>http://&lt;your-ip&gt;:8799/dashboard.html</code>.
       </p>
     </section>
 

@@ -239,6 +239,36 @@ git clone https://github.com/socaseinpoint/arcs ~/arcs &amp;&amp; cd ~/arcs &amp
     </div>
   </section>
 
+  <!-- DASHBOARD — presentation layer, separate from the method -->
+  <section id="dashboard">
+    <div class="wrap block">
+      <div class="head reveal">
+        <div class="num">§ 05</div>
+        <div>
+          <h2>See all your work, in one glance.</h2>
+          <div class="sub">An optional read-only dashboard over every <code>.arcs/</code> on your machine.</div>
+        </div>
+      </div>
+      <div class="body-grid reveal">
+        <div></div>
+        <div>
+          <p class="prose">
+            <code>arcs dashboard</code> scans every arcs project on disk and builds a single
+            self-contained page — no server, no install beyond bash + git. A portfolio pulse, a
+            by-day <b>digest</b> of what you opened and closed (read from git), a <b>recent work</b>
+            feed, and a detail view that shows each arc's real <code>output/</code> so you can read
+            <em>what actually happened</em> without leaving the page.
+          </p>
+          <p class="prose dim">
+            It's a <b>presentation layer</b> — strictly separate from the method. It only reads
+            <code>.arcs/</code>, never writes. Responsive, so you can open it on your phone over the
+            LAN. Run <code>arcs dashboard</code> and it opens in your browser; re-run to refresh.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- CLOSER -->
   <section>
     <div class="wrap closer reveal">

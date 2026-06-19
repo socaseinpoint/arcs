@@ -113,6 +113,7 @@
   .proj-card .pfocus{font-size:12px;color:var(--ink-dim);line-height:1.4}
   .proj-card .pfocus .lbl{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);display:block;margin-bottom:3px}
   .proj-card .idle{color:var(--ink-faint);font-style:italic}
+  .proj-card .pcand{margin-top:10px;font-family:var(--mono);font-size:11px;color:var(--accent)}
 
   /* rows */
   .group-label{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);margin:22px 0 8px;display:flex;align-items:center;gap:8px}
@@ -302,16 +303,18 @@
 <div class="app">
   <aside class="rail">
     <div class="brand"><h1>ar<span class="u">cs</span></h1><span class="v">v2 · portfolio</span></div>
-    <h5>scope</h5>
+    <h5 data-t="scope">scope</h5>
     <div id="scopeList"></div>
     <div id="viewBox"></div>
-    <h5>display</h5>
-    <div class="ctl"><label>group by</label>
-      <select id="groupBy"><option value="none">— flat</option><option value="status">status</option><option value="cluster">theme</option><option value="release">release</option></select></div>
-    <div class="ctl"><label>color by</label>
-      <select id="colorBy"><option value="status">status</option><option value="cluster">theme</option></select></div>
-    <div class="toggle on" id="tgClosed"><span>show closed</span><span class="sw"></span></div>
-    <div class="toggle" id="tgDense"><span>compact</span><span class="sw"></span></div>
+    <h5 data-t="display">display</h5>
+    <div class="ctl"><label data-t="groupBy">group by</label>
+      <select id="groupBy"><option value="none" data-t="flat">— flat</option><option value="status" data-t="statusOpt">status</option><option value="cluster" data-t="themeOpt">theme</option><option value="release" data-t="releaseOpt">release</option></select></div>
+    <div class="ctl"><label data-t="colorBy">color by</label>
+      <select id="colorBy"><option value="status" data-t="statusOpt">status</option><option value="cluster" data-t="themeOpt">theme</option></select></div>
+    <div class="toggle on" id="tgClosed"><span data-t="showClosed">show closed</span><span class="sw"></span></div>
+    <div class="toggle" id="tgDense"><span data-t="compact">compact</span><span class="sw"></span></div>
+    <h5 data-t="language">language</h5>
+    <div class="ctl"><select id="langSel"><option value="en">English</option><option value="ru">Русский</option><option value="es">Español</option></select></div>
   </aside>
   <main id="main">
     <div class="crumb" id="crumb"></div>
@@ -327,6 +330,42 @@
 /*__ARCS_DATA__*/
 PROJECTS.forEach(p=>p.arcs.forEach(a=>{a._pid=p.id; if(a.slug[0]==="@")a.isGoal=true;}));
 const projById=id=>PROJECTS.find(p=>p.id===id);
+// flat candidate index so any candidate chip can open its detail drawer
+const ALLCANDS=[];PROJECTS.forEach(p=>(p.candidates||[]).forEach(c=>{c._ci=ALLCANDS.length;ALLCANDS.push({c,p});}));
+/* ---------- i18n (UI chrome only; arc content stays in its own language) ---------- */
+const STRINGS={
+  en:{overview:"overview",digest:"digest",allActive:"all active",allGoals:"all goals",board:"board",lineage:"lineage",timeline:"timeline",map:"map",
+    allProjects:"all projects",scope:"scope",view:"view",portfolio:"portfolio",display:"display",groupBy:"group by",colorBy:"color by",showClosed:"show closed",compact:"compact",language:"language",
+    flat:"— flat",statusOpt:"status",themeOpt:"theme",releaseOpt:"release",unreleased:"unreleased",untagged:"untagged",
+    projects:"projects",arcsTotal:"arcs total",inFlight:"in flight",projectsActive:"projects active",goalArcs:"goal arcs",arcs:"arcs",goals:"goals",closed:"closed",active:"active",done:"done",goal:"goal",goalDone:"goal done",
+    recentWork:"recent work · what you touched last",inFlightNow:"in flight now",stream:"stream",stillOpen:"still open",activityByDay:"activity · by day",surfacedCandidates:"surfaced candidates",candidates:"candidates",candidate:"candidate",idea:"idea",promote:"promote",
+    today:"today",yesterday:"yesterday",showEarlier:"show earlier",moreDays:"more days",noActivity:"no arc activity recorded in git yet",closedN:"closed",openedN:"opened",last7:"in the last 7 days — newest first",
+    focus:"focus",idle:"idle — nothing in flight",nothingInFlight:"nothing in flight anywhere — all projects idle",noGoalsAnywhere:"no goals anywhere",
+    content:"content",path:"path",copy:"copy",copied:"copied",stages:"stages",inputLbl:"input",workspaceLbl:"workspace",outputLbl:"output",nothingRecorded:"nothing recorded yet",checklist:"checklist · sub-arcs",noContent:"no readable content recorded yet",from:"from",spawned:"spawned",noOneLiner:"— no one-liner written —",noOneLinerYet:"— no one-liner yet —",workingFiles:"working file",empty:"empty — no intermediate work",
+    subOverview:"every arcs project on disk — the cross-project pulse",subDigest:"what you actually did — read from git, across all projects",subActive:"everything in flight right now, across all projects",subGoals:"every goal arc across all projects",
+    subBoard:"this project's stream — pulse, in-flight, every arc",subLineage:"how this project's arcs spawn each other",subTimeline:"this project's arcs by release",subMap:"this project's arcs clustered by theme",history:"history",newestFirst:"newest first"},
+  ru:{overview:"обзор",digest:"дайджест",allActive:"в работе",allGoals:"все цели",board:"доска",lineage:"родословная",timeline:"хронология",map:"карта",
+    allProjects:"все проекты",scope:"проект",view:"вид",portfolio:"портфель",display:"вид",groupBy:"группировка",colorBy:"цвет по",showClosed:"показывать закрытые",compact:"компактно",language:"язык",
+    flat:"— плоско",statusOpt:"статус",themeOpt:"тема",releaseOpt:"релиз",unreleased:"без релиза",untagged:"без тега",
+    projects:"проекты",arcsTotal:"всего арок",inFlight:"в работе",projectsActive:"активные проекты",goalArcs:"цели",arcs:"арки",goals:"цели",closed:"закрыто",active:"активна",done:"готово",goal:"цель",goalDone:"цель готова",
+    recentWork:"недавняя работа · что трогали последним",inFlightNow:"сейчас в работе",stream:"поток",stillOpen:"ещё открыто",activityByDay:"активность · по дням",surfacedCandidates:"кандидаты",candidates:"кандидаты",candidate:"кандидат",idea:"идея",promote:"продвинуть",
+    today:"сегодня",yesterday:"вчера",showEarlier:"показать раньше",moreDays:"дн. ещё",noActivity:"в git ещё нет активности по аркам",closedN:"закрыто",openedN:"открыто",last7:"за последние 7 дней — новые сверху",
+    focus:"фокус",idle:"простой — ничего в работе",nothingInFlight:"нигде ничего в работе — все проекты простаивают",noGoalsAnywhere:"целей нигде нет",
+    content:"содержимое",path:"путь",copy:"копировать",copied:"скопировано",stages:"стадии",inputLbl:"вход",workspaceLbl:"рабочая",outputLbl:"выход",nothingRecorded:"пока ничего не записано",checklist:"чеклист · под-арки",noContent:"читаемого содержимого пока нет",from:"из",spawned:"породил",noOneLiner:"— однострочник не написан —",noOneLinerYet:"— однострочника пока нет —",workingFiles:"рабочих файлов",empty:"пусто — нет промежуточной работы",
+    subOverview:"каждый arcs-проект на диске — пульс по всем",subDigest:"что ты реально сделал — из git, по всем проектам",subActive:"всё, что прямо сейчас в работе, по всем проектам",subGoals:"все цели по всем проектам",
+    subBoard:"поток проекта — пульс, в работе, все арки",subLineage:"как арки проекта порождают друг друга",subTimeline:"арки проекта по релизам",subMap:"арки проекта по темам",history:"история",newestFirst:"новые сверху"},
+  es:{overview:"resumen",digest:"digest",allActive:"en curso",allGoals:"objetivos",board:"tablero",lineage:"linaje",timeline:"cronología",map:"mapa",
+    allProjects:"todos los proyectos",scope:"proyecto",view:"vista",portfolio:"portafolio",display:"vista",groupBy:"agrupar por",colorBy:"color por",showClosed:"mostrar cerrados",compact:"compacto",language:"idioma",
+    flat:"— plano",statusOpt:"estado",themeOpt:"tema",releaseOpt:"versión",unreleased:"sin versión",untagged:"sin etiqueta",
+    projects:"proyectos",arcsTotal:"arcos en total",inFlight:"en curso",projectsActive:"proyectos activos",goalArcs:"objetivos",arcs:"arcos",goals:"objetivos",closed:"cerrado",active:"activo",done:"hecho",goal:"objetivo",goalDone:"objetivo hecho",
+    recentWork:"trabajo reciente · lo último que tocaste",inFlightNow:"en curso ahora",stream:"flujo",stillOpen:"aún abierto",activityByDay:"actividad · por día",surfacedCandidates:"candidatos",candidates:"candidatos",candidate:"candidato",idea:"idea",promote:"promover",
+    today:"hoy",yesterday:"ayer",showEarlier:"ver anteriores",moreDays:"días más",noActivity:"aún no hay actividad de arcos en git",closedN:"cerrados",openedN:"abiertos",last7:"en los últimos 7 días — más nuevos primero",
+    focus:"foco",idle:"inactivo — nada en curso",nothingInFlight:"nada en curso — todos los proyectos inactivos",noGoalsAnywhere:"no hay objetivos",
+    content:"contenido",path:"ruta",copy:"copiar",copied:"copiado",stages:"etapas",inputLbl:"entrada",workspaceLbl:"trabajo",outputLbl:"salida",nothingRecorded:"nada registrado aún",checklist:"checklist · sub-arcos",noContent:"aún no hay contenido legible",from:"de",spawned:"generó",noOneLiner:"— sin descripción —",noOneLinerYet:"— sin descripción aún —",workingFiles:"archivo de trabajo",empty:"vacío — sin trabajo intermedio",
+    subOverview:"cada proyecto arcs en disco — el pulso entre proyectos",subDigest:"lo que realmente hiciste — desde git, en todos los proyectos",subActive:"todo lo que está en curso ahora, en todos los proyectos",subGoals:"cada objetivo en todos los proyectos",
+    subBoard:"el flujo del proyecto — pulso, en curso, cada arco",subLineage:"cómo los arcos del proyecto se generan entre sí",subTimeline:"los arcos del proyecto por versión",subMap:"los arcos del proyecto agrupados por tema",history:"historial",newestFirst:"más nuevos primero"}
+};
+const T=k=>{const l=STRINGS[ST.lang]||STRINGS.en;return (k in l)?l[k]:(STRINGS.en[k]!==undefined?STRINGS.en[k]:k);};
 const pstat=p=>{const t=p.arcs.length,c=p.arcs.filter(a=>a.st==="closed").length,
   ac=p.arcs.filter(a=>a.st==="active").length,g=p.arcs.filter(a=>a.isGoal).length;
   return{t,c,ac,g,pct:t?Math.round(c/t*100):0}};
@@ -337,7 +376,8 @@ const esc=s=>(s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]
 const trunc=(s,n)=>s.length>n?s.slice(0,n-1)+"…":s;
 const idStr=a=>(a.st==="closed"?"__":"")+String(a.n).padStart(2,"0")+"-"+a.slug+(a.st==="closed"?"__":"");
 
-const ST={scope:"portfolio",pview:"overview",view:"board",groupBy:"none",colorBy:"status",showClosed:true,dense:false,digestDays:3};
+const ST={scope:"portfolio",pview:"overview",view:"board",groupBy:"none",colorBy:"status",showClosed:true,dense:false,digestDays:3,lang:"en"};
+try{const sv=localStorage.getItem("arcs-lang");if(sv&&["en","ru","es"].includes(sv))ST.lang=sv;}catch(e){}
 
 const DGK={ship:{i:"⬆",c:"var(--open)"},close:{i:"✓",c:"var(--accent-2)"},open:{i:"●",c:"var(--goal)"},feat:{i:"+",c:"var(--accent)"},idle:{i:"·",c:"var(--ink-faint)"}};
 
@@ -346,7 +386,7 @@ function renderRail(){
   // scope list
   const sl=document.getElementById("scopeList");
   let h=`<button class="scope-btn all" data-scope="portfolio" aria-selected="${ST.scope==="portfolio"}">
-    <span class="pdot"></span><span class="pn">all projects</span><span class="pc">${PROJECTS.length}</span></button>`;
+    <span class="pdot"></span><span class="pn">${T("allProjects")}</span><span class="pc">${PROJECTS.length}</span></button>`;
   PROJECTS.forEach(p=>{const s=pstat(p);
     h+=`<button class="scope-btn" data-scope="${p.id}" aria-selected="${ST.scope===p.id}">
       <span class="pdot" style="background:${p.pc}"></span><span class="pn">${p.name}</span>
@@ -356,18 +396,18 @@ function renderRail(){
   // view box
   const vb=document.getElementById("viewBox");
   if(ST.scope==="portfolio"){
-    vb.innerHTML=`<h5>portfolio</h5>
-      ${vbtn("overview","◆","overview",true)}${vbtn("digest","◷","digest",true)}${vbtn("active","●","all active",true)}${vbtn("goals","◇","all goals",true)}`;
+    vb.innerHTML=`<h5>${T("portfolio")}</h5>
+      ${vbtn("overview","◆",T("overview"),true)}${vbtn("digest","◷",T("digest"),true)}${vbtn("active","●",T("allActive"),true)}${vbtn("goals","◇",T("allGoals"),true)}`;
     vb.querySelectorAll(".vbtn").forEach(b=>b.onclick=()=>{ST.pview=b.dataset.v;renderRail();render()});
   }else{
-    vb.innerHTML=`<h5>view</h5>
-      ${vbtn("board","▤","board")}${vbtn("lineage","⤳","lineage")}${vbtn("timeline","◷","timeline")}${vbtn("map","▦","map")}`;
+    vb.innerHTML=`<h5>${T("view")}</h5>
+      ${vbtn("board","▤",T("board"))}${vbtn("lineage","⤳",T("lineage"))}${vbtn("timeline","◷",T("timeline"))}${vbtn("map","▦",T("map"))}`;
     vb.querySelectorAll(".vbtn").forEach(b=>b.onclick=()=>{ST.view=b.dataset.v;renderRail();render()});
   }
   // mobile topbar: reflect current scope + view
   const tb=document.getElementById("tbScope");
-  if(tb){const pn=ST.scope==="portfolio"?"all projects":(projById(ST.scope)?.name||ST.scope);
-    tb.textContent=pn+" · "+(ST.scope==="portfolio"?ST.pview:ST.view);}
+  if(tb){const pn=ST.scope==="portfolio"?T("allProjects"):(projById(ST.scope)?.name||ST.scope);
+    tb.textContent=pn+" · "+T(ST.scope==="portfolio"?ST.pview:ST.view);}
 }
 function vbtn(v,ic,label,isP){const sel=isP?ST.pview===v:ST.view===v;
   return `<button class="vbtn" data-v="${v}" aria-selected="${sel}"><span class="ic">${ic}</span> ${label}</button>`;}
@@ -386,29 +426,29 @@ function readHash(){
   const m=decodeURIComponent(location.hash||"").replace(/^#/,"").split("/");
   if(applyState(m[0],m[1]||""))return;
   try{const s=(localStorage.getItem("arcs-dash")||"").split("/");applyState(s[0],s[1]||"");}catch(e){}}
+// fill every static [data-t] label from the string table
+function localize(){document.querySelectorAll("[data-t]").forEach(e=>{const v=T(e.dataset.t);if(v)e.textContent=v;});
+  const ls=document.getElementById("langSel");if(ls)ls.value=ST.lang;}
 function render(){
   writeHash();
+  localize();
   renderRail();
   const body=document.getElementById("body");
   body.className="view-body"+(ST.dense?" density-compact":"");
   const crumb=document.getElementById("crumb");
   if(ST.scope==="portfolio"){
-    crumb.innerHTML="portfolio";
-    const meta={overview:["portfolio","every arcs project on disk — the cross-project pulse"],
-      digest:["digest","what you actually did — read from git, across all projects"],
-      active:["all active","everything in flight right now, across all projects"],
-      goals:["all goals","every goal arc across all projects"]}[ST.pview];
+    crumb.innerHTML=T("portfolio");
+    const meta={overview:[T("portfolio"),T("subOverview")],digest:[T("digest"),T("subDigest")],
+      active:[T("allActive"),T("subActive")],goals:[T("allGoals"),T("subGoals")]}[ST.pview];
     setHead(meta);
     body.innerHTML = ST.pview==="overview"?renderOverview() : ST.pview==="digest"?renderDigest()
       : ST.pview==="active"?renderAllActive() : renderAllGoals();
   }else{
     const p=projById(ST.scope);
-    crumb.innerHTML=`<a data-home>portfolio</a> / ${p.name}`;
+    crumb.innerHTML=`<a data-home>${T("portfolio")}</a> / ${p.name}`;
     crumb.querySelector("[data-home]").onclick=()=>{ST.scope="portfolio";render()};
-    const meta={board:["board","this project's stream — pulse, in-flight, every arc"],
-      lineage:["lineage","how this project's arcs spawn each other"],
-      timeline:["timeline","this project's arcs by release"],
-      map:["map","this project's arcs clustered by theme"]}[ST.view];
+    const meta={board:[T("board"),T("subBoard")],lineage:[T("lineage"),T("subLineage")],
+      timeline:[T("timeline"),T("subTimeline")],map:[T("map"),T("subMap")]}[ST.view];
     setHead([p.name+" · "+meta[0],meta[1]]);
     body.innerHTML = ST.view==="board"?renderBoard(p) : ST.view==="lineage"?renderLineage(p)
       : ST.view==="timeline"?renderTimeline(p) : renderMap(p);
@@ -421,6 +461,7 @@ function wireClicks(root){
     const p=projById(el.dataset.pid||ST.scope); openDrawer(p.arcs.find(a=>a.n==el.dataset.n),p);});
   root.querySelectorAll("[data-drill]").forEach(el=>el.onclick=e=>{e.stopPropagation();ST.scope=el.dataset.drill;ST.view="board";render()});
   root.querySelectorAll("[data-more]").forEach(el=>el.onclick=e=>{e.stopPropagation();ST.digestDays=(ST.digestDays||3)+5;render()});
+  root.querySelectorAll("[data-cand]").forEach(el=>el.onclick=e=>{e.stopPropagation();const x=ALLCANDS[+el.dataset.cand];if(x)openCand(x.c,x.p);});
 }
 
 /* ---------- PORTFOLIO VIEWS ---------- */
@@ -441,45 +482,46 @@ function recentCard({a,p}){
     <div class="rc-top"><span class="rc-title">${arcTitle(a)}</span><span class="age">${ago(a.ts)}</span></div>
     ${desc?`<div class="rc-desc">${esc(trunc(desc,110))}</div>`:""}
     <div class="rc-foot"><span class="ptag"><span class="pdot" style="background:${p.pc}"></span>${trunc(p.name,18)}</span>
-      <span class="rc-st ${a.st}">${a.isGoal?"goal":a.st==="active"?"active":"done"}</span></div></div>`;}
+      <span class="rc-st ${a.st}">${a.isGoal?T("goal"):a.st==="active"?T("active"):T("done")}</span></div></div>`;}
 function renderOverview(){
   const tot=PROJECTS.reduce((s,p)=>s+p.arcs.length,0),
     act=allActive().length,goals=allGoals().length,
     activeProj=PROJECTS.filter(p=>pstat(p).ac>0).length;
   const pulse=`<div class="pulse">
-    <div class="ptile proj"><b>${PROJECTS.length}</b><span>projects</span></div>
-    <div class="ptile"><b>${tot}</b><span>arcs total</span></div>
-    <div class="ptile active"><b>${act}</b><span>in flight</span></div>
-    <div class="ptile"><b>${activeProj}</b><span>projects active</span></div>
-    <div class="ptile goal"><b>${goals}</b><span>goal arcs</span></div></div>`;
+    <div class="ptile proj"><b>${PROJECTS.length}</b><span>${T("projects")}</span></div>
+    <div class="ptile"><b>${tot}</b><span>${T("arcsTotal")}</span></div>
+    <div class="ptile active"><b>${act}</b><span>${T("inFlight")}</span></div>
+    <div class="ptile"><b>${activeProj}</b><span>${T("projectsActive")}</span></div>
+    <div class="ptile goal"><b>${goals}</b><span>${T("goalArcs")}</span></div></div>`;
   const rec=recentArcs(6);
-  const recent=rec.length?`<div class="now"><h3 class="recent-h">recent work · what you touched last</h3>
+  const recent=rec.length?`<div class="now"><h3 class="recent-h">${T("recentWork")}</h3>
     <div class="now-grid">${rec.map(recentCard).join("")}</div></div>`:"";
-  const now=allActive().length?`<div class="now"><h3>in flight now · ${allActive().length}</h3><div class="now-grid">
+  const now=allActive().length?`<div class="now"><h3>${T("inFlightNow")} · ${allActive().length}</h3><div class="now-grid">
     ${allActive().map(({a,p})=>nowCard(a,p)).join("")}</div></div>`:"";
-  const grid=`<div class="group-label">projects</div><div class="proj-grid">${PROJECTS.map(projCard).join("")}</div>`;
+  const grid=`<div class="group-label">${T("projects")}</div><div class="proj-grid">${PROJECTS.map(projCard).join("")}</div>`;
   return pulse+recent+now+grid;
 }
 function nowCard(a,p){return `<div class="now-card${a.isGoal?" goal":""}" data-n="${a.n}" data-pid="${p.id}">
   <div class="nc-top"><span class="nc-id">${idStr(a)}</span>
     <span class="ptag"><span class="pdot" style="background:${p.pc}"></span>${trunc(p.name,16)}</span></div>
-  <div class="nc-goal">${a.goal?esc(a.goal):'<span style="color:var(--ink-faint);font-style:italic">— no one-liner yet —</span>'}</div>
+  <div class="nc-goal">${a.goal?esc(a.goal):`<span style="color:var(--ink-faint);font-style:italic">${T("noOneLinerYet")}</span>`}</div>
   <div class="nc-foot">${a.ts?`<span class="tg">${ago(a.ts)}</span>`:""}${a.isGoal&&a.sub?`<span class="tg">${a.sub} sub-arcs</span>`:""}${a.from?`<span class="tg">↳ from ${String(a.from).padStart(2,"0")}</span>`:""}</div></div>`;}
 function projCard(p){const s=pstat(p);const focus=p.arcs.find(a=>a.st==="active");
   return `<div class="proj-card" style="--pc:${p.pc}" data-drill="${p.id}">
     <div class="ph"><span class="pdot" style="width:9px;height:9px;border-radius:50%;background:${p.pc}"></span><h3>${p.name}</h3></div>
     <div class="ppath">${p.path}</div>
     <div class="pstat">
-      <div><b>${s.t}</b><span>arcs</span></div>
-      <div class="active"><b>${s.ac}</b><span>active</span></div>
-      <div><b>${s.g}</b><span>goals</span></div>
-      <div><b>${s.pct}%</b><span>closed</span></div></div>
+      <div><b>${s.t}</b><span>${T("arcs")}</span></div>
+      <div class="active"><b>${s.ac}</b><span>${T("active")}</span></div>
+      <div><b>${s.g}</b><span>${T("goals")}</span></div>
+      <div><b>${s.pct}%</b><span>${T("closed")}</span></div></div>
     <div class="pbar"><i style="width:${s.pct}%"></i></div>
-    <div class="pfocus"><span class="lbl">focus</span>${focus?(focus.goal?esc(trunc(focus.goal,80)):idStr(focus)):'<span class="idle">idle — nothing in flight</span>'}</div>
+    <div class="pfocus"><span class="lbl">${T("focus")}</span>${focus?(focus.goal?esc(trunc(focus.goal,80)):esc(focus.slug.replace(/^@/,""))):`<span class="idle">${T("idle")}</span>`}</div>
+    ${(p.candidates||[]).length?`<div class="pcand">✦ ${p.candidates.length} ${T("candidates")}</div>`:""}
   </div>`;}
 function renderAllActive(){
   const xs=allActive();
-  if(!xs.length) return `<div class="empty">nothing in flight anywhere — all projects idle</div>`;
+  if(!xs.length) return `<div class="empty">${T("nothingInFlight")}</div>`;
   return `<div class="now-grid">${xs.map(({a,p})=>nowCard(a,p)).join("")}</div>`;
 }
 function renderAllGoals(){
@@ -492,21 +534,22 @@ const evArc=e=>{const p=projById(e.pid);return p?{a:p.arcs.find(x=>x.slug===e.sl
 const dayLabel=ts=>{const d=new Date(ts*1000),n=new Date();
   const strip=x=>new Date(x.getFullYear(),x.getMonth(),x.getDate()).getTime();
   const diff=Math.round((strip(n)-strip(d))/864e5);
-  if(diff===0)return"today";if(diff===1)return"yesterday";
-  return d.toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"});};
+  if(diff===0)return T("today");if(diff===1)return T("yesterday");
+  const loc={en:"en",ru:"ru",es:"es"}[ST.lang]||undefined;
+  return d.toLocaleDateString(loc,{weekday:"short",month:"short",day:"numeric"});};
 function renderDigest(){
   const evs=(DIGEST.events||[]).slice().sort((a,b)=>b.ts-a.ts);
   const wk=Date.now()/1000-7*864e2;
   const cl=evs.filter(e=>e.ts>=wk&&e.k==="closed").length, op=evs.filter(e=>e.ts>=wk&&e.k==="opened").length;
-  const summary=`<div class="dg-narr"><b>${cl}</b> arc${cl===1?"":"s"} closed · <b>${op}</b> opened in the last 7 days — newest first.</div>`;
+  const summary=`<div class="dg-narr"><b>${cl}</b> ${T("closedN")} · <b>${op}</b> ${T("openedN")} ${T("last7")}</div>`;
   // surfaced candidates across the portfolio, on top
   const cands=PROJECTS.flatMap(p=>(p.candidates||[]).map(c=>({c,p})));
-  const candBlock=cands.length?`<div class="group-label">surfaced candidates · ${cands.length}</div>
-    <div class="cand-list">${cands.map(({c,p})=>`<div class="cand" data-drill="${p.id}">
+  const candBlock=cands.length?`<div class="group-label">${T("surfacedCandidates")} · ${cands.length}</div>
+    <div class="cand-list">${cands.map(({c,p})=>`<div class="cand" data-cand="${c._ci}">
       <span class="cand-k">✦</span><div class="cand-main"><div class="cand-t">${esc(c.slug.replace(/^\d+-/,""))}</div>
-      ${c.text?`<div class="cand-d">${esc(trunc(c.text,100))}</div>`:c.from?`<div class="cand-d">from ${esc(c.from)}</div>`:""}</div>
+      ${c.text?`<div class="cand-d">${esc(trunc(c.text,100))}</div>`:c.from?`<div class="cand-d">${T("from")} ${esc(c.from)}</div>`:""}</div>
       <span class="ptag"><span class="pdot" style="background:${p.pc}"></span>${trunc(p.name,16)}</span></div>`).join("")}</div>`:"";
-  if(!evs.length) return summary+candBlock+`<div class="empty">no arc activity recorded in git yet</div>`;
+  if(!evs.length) return summary+candBlock+`<div class="empty">${T("noActivity")}</div>`;
   // group events by calendar day, newest day first
   const days=[],idx={};
   evs.forEach(e=>{const k=dayLabel(e.ts);if(!(k in idx)){idx[k]=days.length;days.push({k,items:[]});}days[idx[k]].items.push(e);});
@@ -516,12 +559,12 @@ function renderDigest(){
       const desc=(a.st==="closed"?(a.out||a.goal):(a.goal||a.out))||"";
       return `<div class="ev ${e.k}" data-n="${a.n}" data-pid="${p.id}">
         <span class="ev-k ${e.k}">${e.k==="closed"?"✓":"+"}</span>
-        <div class="ev-main"><div class="ev-t"><span class="ev-verb ${e.k}">${e.k}</span> ${arcTitle(a)}
+        <div class="ev-main"><div class="ev-t"><span class="ev-verb ${e.k}">${T(e.k==="closed"?"closedN":"openedN")}</span> ${arcTitle(a)}
           <span class="ptag"><span class="pdot" style="background:${p.pc}"></span>${trunc(p.name,14)}</span></div>
           ${desc?`<div class="ev-d">${esc(trunc(desc,120))}</div>`:""}</div>
         <span class="age">${ago(e.ts)}</span></div>`;}).join("")}</div>`).join("");
-  const more=show<days.length?`<button class="show-more" data-more="digest">show earlier · ${days.length-show} more day${days.length-show===1?"":"s"}</button>`:"";
-  return summary+candBlock+`<div class="group-label" style="margin-top:24px">activity · by day</div>`+feed+more;
+  const more=show<days.length?`<button class="show-more" data-more="digest">${T("showEarlier")} · ${days.length-show} ${T("moreDays")}</button>`:"";
+  return summary+candBlock+`<div class="group-label" style="margin-top:24px">${T("activityByDay")}</div>`+feed+more;
 }
 
 /* ---------- PROJECT VIEWS ---------- */
@@ -531,9 +574,9 @@ const kidCount=(p,n)=>p.arcs.filter(a=>a.from===n).length;
 const arcTitle=a=>a.goal?esc(a.goal):esc(a.slug.replace(/^@/,""));
 function rowRich(a,p){
   const badge=a.isGoal
-    ?(a.st==="closed"?`<span class="badge closed">goal done${a.sub?` ${a.sub}✓`:""}</span>`
-      :`<span class="badge goal">goal${a.sub?` ${a.sub}✓`:""}</span>`)
-    :a.st==="active"?`<span class="badge active">active</span>`:`<span class="badge closed">done</span>`;
+    ?(a.st==="closed"?`<span class="badge closed">${T("goalDone")}${a.sub?` ${a.sub}✓`:""}</span>`
+      :`<span class="badge goal">${T("goal")}${a.sub?` ${a.sub}✓`:""}</span>`)
+    :a.st==="active"?`<span class="badge active">${T("active")}</span>`:`<span class="badge closed">${T("done")}</span>`;
   const kc=kidCount(p,a.n);
   const meta=`<span class="arc-meta">
     ${kc?`<span class="g spawn">⑂${kc}</span>`:""}
@@ -557,23 +600,24 @@ function grouped(p){const xs=visible(p);
 function renderBoard(p){
   const s=pstat(p);
   const pulse=`<div class="pulse">
-    <div class="ptile"><b>${s.t}</b><span>arcs</span></div>
-    <div class="ptile active"><b>${s.ac}</b><span>in flight</span></div>
-    <div class="ptile goal"><b>${s.g}</b><span>goal arcs</span></div>
-    <div class="ptile"><b>${s.pct}%</b><span>closed</span></div></div>`;
+    <div class="ptile"><b>${s.t}</b><span>${T("arcs")}</span></div>
+    <div class="ptile active"><b>${s.ac}</b><span>${T("inFlight")}</span></div>
+    <div class="ptile goal"><b>${s.g}</b><span>${T("goalArcs")}</span></div>
+    <div class="ptile"><b>${s.pct}%</b><span>${T("closed")}</span></div></div>`;
   const act=p.arcs.filter(a=>a.st==="active");
-  const now=act.length?`<div class="now"><h3>in flight now · ${act.length}</h3><div class="now-grid">${act.map(a=>nowCard(a,p)).join("")}</div></div>`:"";
+  const now=act.length?`<div class="now"><h3>${T("inFlightNow")} · ${act.length}</h3><div class="now-grid">${act.map(a=>nowCard(a,p)).join("")}</div></div>`:"";
   const stream=grouped(p).map(([label,xs,cc])=>{if(!xs.length)return"";
     const head=label?`<div class="group-label">${cc?`<span class="dot" style="background:${cc}"></span>`:""}${label} <span style="color:var(--ink-faint)">· ${xs.length}</span></div>`:"";
     return head+xs.map(a=>rowRich(a,p)).join("");}).join("");
-  const sh=ST.groupBy==="none"?`<div class="group-label" style="margin-top:4px">stream · ${visible(p).length}</div>`:"";
+  const sh=ST.groupBy==="none"?`<div class="group-label" style="margin-top:4px">${T("stream")} · ${visible(p).length}</div>`:"";
   // surfaced candidates for this project — backlog not yet promoted to arcs
   const cs=p.candidates||[];
-  const cands=cs.length?`<div class="group-label" style="margin-top:26px">candidates · ${cs.length}</div>
-    <div class="cand-list">${cs.map(c=>`<div class="cand">
+  const cands=cs.length?`<div class="group-label" style="margin-top:22px">${T("candidates")} · ${cs.length}</div>
+    <div class="cand-list">${cs.map(c=>`<div class="cand" data-cand="${c._ci}">
       <span class="cand-k">✦</span><div class="cand-main"><div class="cand-t">${esc(c.slug.replace(/^\d+-/,""))}</div>
-      ${c.text?`<div class="cand-d">${esc(trunc(c.text,100))}</div>`:c.from?`<div class="cand-d">from ${esc(c.from)}</div>`:""}</div></div>`).join("")}</div>`:"";
-  return pulse+now+sh+stream+cands;
+      ${c.text?`<div class="cand-d">${esc(trunc(c.text,100))}</div>`:c.from?`<div class="cand-d">${T("from")} ${esc(c.from)}</div>`:""}</div></div>`).join("")}</div>`:"";
+  // order: pulse → current job (in flight) → candidates → the rest of the stream (closed below)
+  return pulse+now+cands+sh+stream;
 }
 const strokeFor=a=>ST.colorBy==="cluster"?CLUSTERS[a.cl||"untagged"].cc:(a.isGoal?"var(--goal)":a.st==="active"?"var(--open)":"var(--line)");
 const stDot=a=>a.isGoal?"var(--goal)":a.st==="active"?"var(--open)":"var(--ink-faint)";
@@ -637,15 +681,15 @@ function mdLite(t){
 let DOCS=[],DOCI=0;  // current drawer's documents + active index
 function renderDocPane(){
   const pane=document.getElementById("docPane"),tabs=document.getElementById("docTabs");
-  if(!DOCS.length){tabs.innerHTML="";pane.innerHTML='<div class="doc-empty">no readable content recorded yet</div>';return;}
+  if(!DOCS.length){tabs.innerHTML="";pane.innerHTML=`<div class="doc-empty">${T("noContent")}</div>`;return;}
   tabs.innerHTML=DOCS.map((d,i)=>`<button class="doc-tab ${i===DOCI?"on":""}" data-di="${i}">${esc(d.p)}</button>`).join("");
   pane.innerHTML=`<pre>${mdLite(DOCS[DOCI].t)}</pre>`;
   tabs.querySelectorAll(".doc-tab").forEach(b=>b.onclick=()=>{DOCI=+b.dataset.di;renderDocPane()});
 }
 function openDrawer(a,p){
   if(!a)return;const parent=a.from?p.arcs.find(x=>x.n===a.from):null,kids=p.arcs.filter(x=>x.from===a.n);
-  const stB=a.st==="active"?'<span class="badge active">● active</span>':'<span class="badge closed">done</span>';
-  const ws=a.ws>0?`${a.ws} working file${a.ws>1?"s":""}`:"empty — no intermediate work";
+  const stB=a.st==="active"?`<span class="badge active">● ${T("active")}</span>`:`<span class="badge closed">${T("done")}</span>`;
+  const ws=a.ws>0?`${a.ws} ${T("workingFiles")}${a.ws>1&&ST.lang==="en"?"s":""}`:T("empty");
   const path=a.path||`${p.path}/.arcs/arcs/${idStr(a)}`;
   // assemble readable docs: real files (output → workspace → input) first, md body LAST
   DOCS=[];DOCI=0;
@@ -662,26 +706,41 @@ function openDrawer(a,p){
   document.getElementById("drawerBody").innerHTML=`
     <div class="d-id">${p.name} / ${idStr(a)}</div>
     <h3>${esc(a.slug.replace(/^@/,""))}</h3>
-    <div class="d-meta">${stB}${a.isGoal?'<span class="badge goal">@ goal</span>':""}
+    <div class="d-meta">${stB}${a.isGoal?`<span class="badge goal">@ ${T("goal")}</span>`:""}
       <span class="badge soft">${CLUSTERS[a.cl||"untagged"].name}</span>
-      ${a.rel&&a.rel!=="—"?`<span class="badge soft">${a.rel==="next"?"unreleased":"v"+a.rel}</span>`:""}</div>
-    <div class="field"><h4>goal</h4><p class="lead">${a.goal?esc(a.goal):"— no one-liner written —"}</p></div>
-    ${a.isGoal&&a.sub?`<div class="field"><h4>checklist · sub-arcs</h4><div class="prog"><div class="prog-bar" style="width:100%"></div></div><p class="dim">${a.sub}/${a.sub} closed</p></div>`:""}
-    ${allEmpty?`<div class="field"><h4>stages</h4><p class="dim">input → workspace → output · nothing recorded yet</p></div>`:`
+      ${a.rel&&a.rel!=="—"?`<span class="badge soft">${a.rel==="next"?T("unreleased"):"v"+a.rel}</span>`:""}</div>
+    <div class="field"><h4>${T("goal")}</h4><p class="lead">${a.goal?esc(a.goal):T("noOneLiner")}</p></div>
+    ${a.isGoal&&a.sub?`<div class="field"><h4>${T("checklist")}</h4><div class="prog"><div class="prog-bar" style="width:100%"></div></div><p class="dim">${a.sub}/${a.sub} ${T("closed")}</p></div>`:""}
+    ${allEmpty?`<div class="field"><h4>${T("stages")}</h4><p class="dim">input → workspace → output · ${T("nothingRecorded")}</p></div>`:`
     <div class="stage">
-      <div class="stage-step ${a.inp?"has":""}"><span class="dot"></span><div><b>input</b><p>${a.inp?esc(a.inp):"— nothing recorded —"}</p></div></div>
-      <div class="stage-step ${a.ws>0?"has":""}"><span class="dot"></span><div><b>workspace</b><p>${ws}</p></div></div>
-      <div class="stage-step ${a.out?"has":""}"><span class="dot"></span><div><b>output</b><p>${a.out?esc(a.out):"— not yet written —"}</p></div></div></div>`}
-    <div class="field"><h4>content</h4><div class="doc-tabs" id="docTabs"></div><div class="doc-pane" id="docPane"></div></div>
-    ${(parent||kids.length)?`<div class="field"><h4>lineage</h4>
-      ${parent?`<div class="ln-row"><span class="ln-tag">from</span><span class="lineage-link" data-jn="${parent.n}">${idStr(parent)}</span></div>`:""}
-      ${kids.map(k=>`<div class="ln-row"><span class="ln-tag">spawned</span><span class="lineage-link" data-jn="${k.n}">${idStr(k)}</span></div>`).join("")}</div>`:""}
-    <div class="field"><h4>path</h4><div class="path-row"><span class="mono-sm">${esc(path)}</span><button class="copy-btn" id="copyPath">copy</button></div></div>`;
+      <div class="stage-step ${a.inp?"has":""}"><span class="dot"></span><div><b>${T("inputLbl")}</b><p>${a.inp?esc(a.inp):T("nothingRecorded")}</p></div></div>
+      <div class="stage-step ${a.ws>0?"has":""}"><span class="dot"></span><div><b>${T("workspaceLbl")}</b><p>${ws}</p></div></div>
+      <div class="stage-step ${a.out?"has":""}"><span class="dot"></span><div><b>${T("outputLbl")}</b><p>${a.out?esc(a.out):T("nothingRecorded")}</p></div></div></div>`}
+    <div class="field"><h4>${T("content")}</h4><div class="doc-tabs" id="docTabs"></div><div class="doc-pane" id="docPane"></div></div>
+    ${(parent||kids.length)?`<div class="field"><h4>${T("lineage")}</h4>
+      ${parent?`<div class="ln-row"><span class="ln-tag">${T("from")}</span><span class="lineage-link" data-jn="${parent.n}">${idStr(parent)}</span></div>`:""}
+      ${kids.map(k=>`<div class="ln-row"><span class="ln-tag">${T("spawned")}</span><span class="lineage-link" data-jn="${k.n}">${idStr(k)}</span></div>`).join("")}</div>`:""}
+    <div class="field"><h4>${T("path")}</h4><div class="path-row"><span class="mono-sm">${esc(path)}</span><button class="copy-btn" id="copyPath">${T("copy")}</button></div></div>`;
   renderDocPane();
-  document.getElementById("copyPath").onclick=e=>{navigator.clipboard?.writeText(path);e.target.textContent="copied";setTimeout(()=>e.target.textContent="copy",1200)};
+  document.getElementById("copyPath").onclick=e=>{navigator.clipboard?.writeText(path);e.target.textContent=T("copied");setTimeout(()=>e.target.textContent=T("copy"),1200)};
   drawer.classList.add("show");bg.classList.add("show");document.body.classList.add("modal-open");
   drawer.scrollTop=0;
   drawer.querySelectorAll(".lineage-link").forEach(l=>l.onclick=()=>openDrawer(p.arcs.find(x=>x.n==l.dataset.jn),p));
+}
+// candidate detail — a backlog idea, not yet an arc
+function openCand(c,p){
+  if(!c)return;
+  DOCS=c.body?[{p:c.slug.replace(/^\d+-/,"")+".md",t:c.body}]:[];DOCI=0;
+  document.getElementById("drawerBody").innerHTML=`
+    <div class="d-id">${p.name} / ${T("candidate")}</div>
+    <h3>${esc(c.slug.replace(/^\d+-/,""))}</h3>
+    <div class="d-meta"><span class="badge soft">✦ ${T("candidate")}</span>${c.from?`<span class="badge soft">${T("from")} ${esc(c.from)}</span>`:""}</div>
+    ${c.text?`<div class="field"><h4>${T("idea")}</h4><p class="lead">${esc(c.text)}</p></div>`:""}
+    ${c.body?`<div class="field"><h4>${T("content")}</h4><div class="doc-tabs" id="docTabs"></div><div class="doc-pane" id="docPane"></div></div>`:""}
+    <div class="field"><h4>${T("promote")}</h4><div class="path-row"><span class="mono-sm">arcs promote ${esc(c.slug)}</span><button class="copy-btn" id="copyPath">${T("copy")}</button></div></div>`;
+  if(c.body)renderDocPane();
+  document.getElementById("copyPath").onclick=e=>{navigator.clipboard?.writeText("arcs promote "+c.slug);e.target.textContent=T("copied");setTimeout(()=>e.target.textContent=T("copy"),1200)};
+  drawer.classList.add("show");bg.classList.add("show");document.body.classList.add("modal-open");drawer.scrollTop=0;
 }
 const closeDrawer=()=>{drawer.classList.remove("show");bg.classList.remove("show");document.body.classList.remove("modal-open")};
 document.getElementById("closeX").onclick=closeDrawer;bg.onclick=closeDrawer;
@@ -692,6 +751,7 @@ document.getElementById("groupBy").onchange=e=>{ST.groupBy=e.target.value;render
 document.getElementById("colorBy").onchange=e=>{ST.colorBy=e.target.value;render()};
 function tog(id,key){const el=document.getElementById(id);el.onclick=()=>{el.classList.toggle("on");ST[key]=el.classList.contains("on");render()}}
 tog("tgClosed","showClosed");tog("tgDense","dense");
+document.getElementById("langSel").onchange=e=>{ST.lang=e.target.value;try{localStorage.setItem("arcs-lang",ST.lang)}catch(_){}render()};
 readHash();addEventListener("hashchange",()=>{readHash();render()});
 
 /* ---------- mobile nav (off-canvas rail) ---------- */

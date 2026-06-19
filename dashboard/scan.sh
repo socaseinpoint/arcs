@@ -345,9 +345,10 @@ emit_cands() {   # <pd>
     slug=$(basename "$f" .md)
     from=$(field "$f" from); is_placeholder "$from" && from=""
     text=$(grep -vE '^(#|from:)' "$f" 2>/dev/null | grep -m1 . || true)
+    local body; body=$(read_capped "$f" 4000)
     [ "$first" = 1 ] || printf ','
     first=0
-    printf '{slug:%s,from:%s,text:%s}' "$(jstr "$slug")" "$(jstr "$from")" "$(jstr "$text")"
+    printf '{slug:%s,from:%s,text:%s,body:%s}' "$(jstr "$slug")" "$(jstr "$from")" "$(jstr "$text")" "$(printf '%s' "$body" | jstr_multi)"
   done
 }
 
