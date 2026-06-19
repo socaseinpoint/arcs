@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>arcs · dashboard prototype v1</title>
+<style>
+  :root{
+    --bg: oklch(16% 0.012 250);
+    --bg-raise: oklch(20% 0.014 250);
+    --bg-card: oklch(23% 0.016 250);
+    --line: oklch(32% 0.018 250);
+    --line-soft: oklch(27% 0.014 250);
+    --ink: oklch(94% 0.01 250);
+    --ink-dim: oklch(70% 0.012 250);
+    --ink-faint: oklch(54% 0.012 250);
+    --accent: oklch(80% 0.16 78);
+    --accent-2: oklch(72% 0.15 200);
+    --open: oklch(82% 0.17 145);
+    --closed: oklch(58% 0.01 250);
+    --goal: oklch(78% 0.17 320);
+    --mono: ui-monospace,"SF Mono","JetBrains Mono",Menlo,monospace;
+    --sans: system-ui,-apple-system,"Segoe UI",sans-serif;
+    /* cluster hues */
+    --c-landing: oklch(78% 0.15 60);
+    --c-method:  oklch(74% 0.14 290);
+    --c-cli:     oklch(76% 0.14 200);
+    --c-release: oklch(80% 0.15 145);
+    --c-quality: oklch(72% 0.16 20);
+    --c-infra:   oklch(70% 0.12 250);
+    --c-bench:   oklch(82% 0.15 95);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:
+      radial-gradient(1100px 560px at 85% -10%, oklch(24% 0.03 78 / .22), transparent 60%),
+      radial-gradient(900px 480px at -10% 110%, oklch(24% 0.03 200 / .18), transparent 55%),
+      var(--bg);
+    color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;line-height:1.45;
+  }
+  .app{display:grid;grid-template-columns:248px 1fr;min-height:100vh}
+
+  /* ---- RAIL ---- */
+  aside.rail{border-right:1px solid var(--line-soft);padding:26px 20px;position:sticky;top:0;height:100vh;overflow-y:auto}
+  .brand{display:flex;align-items:baseline;gap:9px;margin-bottom:6px}
+  .brand h1{font-family:var(--mono);font-size:23px;margin:0;font-weight:600;letter-spacing:-.02em}
+  .brand h1 .u{color:var(--accent)}
+  .brand .v{font-family:var(--mono);font-size:10px;color:var(--ink-faint)}
+  .mini{display:flex;gap:14px;margin:14px 0 24px;font-family:var(--mono);font-size:11px;color:var(--ink-faint)}
+  .mini b{color:var(--ink);font-weight:600}
+  .mini .o{color:var(--open)} .mini .g{color:var(--goal)}
+
+  .rail h5{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint);margin:22px 0 9px}
+  .vbtn{display:flex;align-items:center;gap:9px;width:100%;text-align:left;appearance:none;background:none;border:1px solid transparent;
+    color:var(--ink-dim);font-family:var(--mono);font-size:13px;padding:8px 11px;border-radius:9px;cursor:pointer;transition:.13s}
+  .vbtn:hover{background:var(--bg-raise)}
+  .vbtn[aria-selected=true]{background:var(--bg-card);border-color:var(--line);color:var(--ink)}
+  .vbtn .ic{width:16px;text-align:center;color:var(--accent)}
+
+  .ctl{margin-bottom:14px}
+  .ctl label{display:block;font-family:var(--mono);font-size:11px;color:var(--ink-faint);margin-bottom:5px}
+  .ctl select{width:100%;background:var(--bg-card);color:var(--ink);border:1px solid var(--line);border-radius:8px;
+    font-family:var(--mono);font-size:12px;padding:7px 9px}
+  .toggle{display:flex;align-items:center;justify-content:space-between;font-family:var(--mono);font-size:12px;color:var(--ink-dim);
+    padding:7px 0;cursor:pointer}
+  .sw{width:34px;height:19px;border-radius:99px;background:var(--line);position:relative;transition:.16s;flex:none}
+  .sw::after{content:"";position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;background:var(--ink-dim);transition:.16s}
+  .toggle.on .sw{background:oklch(82% 0.17 145 / .5)} .toggle.on .sw::after{left:17px;background:var(--open)}
+
+  /* ---- MAIN ---- */
+  main{padding:30px 34px 80px;overflow-x:auto}
+  .view-head{display:flex;align-items:baseline;gap:12px;margin-bottom:4px}
+  .view-head h2{font-family:var(--mono);font-size:19px;margin:0;font-weight:600;letter-spacing:-.01em}
+  .view-head p{margin:0;color:var(--ink-faint);font-size:13px}
+  .view-body{margin-top:22px}
+
+  /* board — pulse strip */
+  .pulse{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:26px}
+  .ptile{background:var(--bg-raise);border:1px solid var(--line-soft);border-radius:13px;padding:15px 16px;position:relative;overflow:hidden}
+  .ptile b{display:block;font-family:var(--mono);font-size:27px;font-weight:600;line-height:1;letter-spacing:-.02em}
+  .ptile span{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--ink-faint);margin-top:7px;display:block}
+  .ptile.active b{color:var(--open)} .ptile.goal b{color:var(--goal)} .ptile.rel b{color:var(--accent)}
+  .ptile .spark{position:absolute;right:0;bottom:0;height:38px;width:60%;opacity:.5}
+  .ptile .ring{position:absolute;top:13px;right:13px}
+
+  /* board — NOW band */
+  .now{margin-bottom:30px}
+  .now h3{font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--open);margin:0 0 12px;display:flex;align-items:center;gap:8px}
+  .now h3::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--open);box-shadow:0 0 0 4px oklch(82% 0.17 145 / .15)}
+  .now-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:13px}
+  .now-card{background:linear-gradient(160deg,oklch(82% 0.17 145 / .07),transparent 70%),var(--bg-raise);
+    border:1px solid oklch(82% 0.17 145 / .28);border-radius:13px;padding:15px;cursor:pointer;transition:.14s}
+  .now-card:hover{border-color:var(--open);transform:translateY(-2px)}
+  .now-card .nc-id{font-family:var(--mono);font-size:12px;color:var(--ink-dim)}
+  .now-card.goal .nc-id{color:var(--goal)}
+  .now-card .nc-goal{font-size:14px;color:var(--ink);margin:8px 0 12px;line-height:1.4;min-height:38px}
+  .now-card .nc-foot{display:flex;gap:8px;flex-wrap:wrap;font-family:var(--mono);font-size:10px;color:var(--ink-faint)}
+  .now-card .nc-foot .tg{background:var(--bg-card);border:1px solid var(--line);border-radius:6px;padding:2px 7px}
+
+  /* board — list rows */
+  .group-label{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);
+    margin:22px 0 8px;display:flex;align-items:center;gap:8px}
+  .group-label .dot{width:8px;height:8px;border-radius:2px}
+  .arc-row{display:grid;grid-template-columns:100px 1fr auto auto;gap:13px;align-items:center;padding:9px 14px;border:1px solid transparent;
+    border-radius:10px;cursor:pointer;transition:.13s;border-left:3px solid transparent}
+  .arc-row:hover{background:var(--bg-raise);border-color:var(--line-soft)}
+  .arc-row.closed{opacity:.55} .arc-row.active{background:oklch(82% 0.17 145 / .06)}
+  .arc-row .id{font-family:var(--mono);font-size:12.5px;color:var(--ink-dim)}
+  .arc-row.goal .id{color:var(--goal)}
+  .arc-row .title{font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .arc-row .title .ph{color:var(--ink-faint);font-style:italic}
+  .arc-meta{display:flex;gap:9px;align-items:center;font-family:var(--mono);font-size:10.5px;color:var(--ink-faint)}
+  .arc-meta .g{display:inline-flex;align-items:center;gap:3px}
+  .arc-meta .g.spawn{color:var(--accent)} .arc-meta .g.from{color:var(--accent-2)}
+  .arc-meta .odot{width:7px;height:7px;border-radius:50%;display:inline-block}
+  .arc-meta .rel{background:var(--bg-card);border:1px solid var(--line);border-radius:6px;padding:1px 6px}
+  .density-compact .arc-row{padding:5px 14px}
+  .density-compact .pulse,.density-compact .now{display:none}
+  .badge{font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:99px;white-space:nowrap}
+  .badge.active{background:oklch(82% 0.17 145 / .16);color:var(--open)}
+  .badge.closed{background:oklch(58% 0.01 250 / .14);color:var(--closed)}
+  .badge.goal{background:oklch(78% 0.17 320 / .16);color:var(--goal)}
+
+  /* lineage svg */
+  .graph-shell{background:var(--bg-raise);border:1px solid var(--line-soft);border-radius:14px;padding:8px;overflow:auto}
+  svg{display:block;width:100%;height:auto;min-width:720px}
+  .node rect{fill:var(--bg-card);transition:.15s}
+  .node:hover{cursor:pointer}
+  .node:hover rect{stroke:var(--accent)!important;fill:var(--bg-raise)}
+  .node text{font-family:var(--mono);font-size:11px;fill:var(--ink-dim)}
+  .edge{stroke:var(--line);stroke-width:1.4;fill:none;marker-end:url(#arrow)}
+  .edge.from-hub{stroke:var(--accent);opacity:.6}
+
+  /* timeline */
+  .tl{position:relative;margin-left:8px;padding-left:26px;border-left:2px solid var(--line-soft)}
+  .tl-rel{display:flex;align-items:center;gap:10px;margin:26px 0 12px;position:relative}
+  .tl-rel::before{content:"";position:absolute;left:-33px;width:13px;height:13px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px var(--bg)}
+  .tl-rel b{font-family:var(--mono);font-size:14px;color:var(--accent)}
+  .tl-rel span{font-size:12px;color:var(--ink-faint)}
+  .tl-item{position:relative;padding:6px 0 6px 4px}
+  .tl-item::before{content:"";position:absolute;left:-31px;top:13px;width:7px;height:7px;border-radius:50%;background:var(--line);}
+  .tl-item.active::before{background:var(--open)} .tl-item.goal::before{background:var(--goal)}
+  .tl-item .id{font-family:var(--mono);font-size:12px;color:var(--ink-dim);cursor:pointer}
+  .tl-item .t{font-size:13px;color:var(--ink-dim)}
+
+  /* map / clusters */
+  .map{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
+  .cluster{background:var(--bg-raise);border:1px solid var(--line-soft);border-radius:14px;padding:16px;border-top:3px solid var(--cc)}
+  .cluster h3{font-family:var(--mono);font-size:13px;margin:0 0 4px;color:var(--cc)}
+  .cluster .cnt{font-family:var(--mono);font-size:11px;color:var(--ink-faint);margin-bottom:12px}
+  .chip{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:11px;color:var(--ink-dim);
+    background:var(--bg-card);border:1px solid var(--line);border-radius:7px;padding:4px 8px;margin:0 5px 6px 0;cursor:pointer;transition:.12s}
+  .chip:hover{border-color:var(--cc);color:var(--ink)}
+  .chip.active{box-shadow:inset 0 0 0 1px var(--open)} .chip .d{width:6px;height:6px;border-radius:50%}
+
+  /* drawer */
+  .drawer-bg{position:fixed;inset:0;background:oklch(10% 0.01 250 / .55);opacity:0;pointer-events:none;transition:.2s;z-index:5}
+  .drawer-bg.show{opacity:1;pointer-events:auto}
+  .drawer{position:fixed;top:0;right:0;height:100%;width:min(440px,92vw);z-index:6;background:var(--bg-raise);
+    border-left:1px solid var(--line);transform:translateX(100%);transition:transform .26s cubic-bezier(.16,1,.3,1);padding:28px 26px;overflow-y:auto}
+  .drawer.show{transform:none}
+  .drawer .d-id{font-family:var(--mono);font-size:12px;color:var(--ink-faint)}
+  .drawer h3{font-family:var(--mono);font-size:17px;margin:6px 0 14px}
+  .field{margin-bottom:18px}
+  .field h4{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);margin:0 0 6px}
+  .field p{margin:0;font-size:13.5px;color:var(--ink-dim)}
+  .flow{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11px}
+  .flow span{padding:5px 10px;border:1px solid var(--line);border-radius:7px;color:var(--ink-dim)}
+  .flow .arr{border:0;color:var(--ink-faint)}
+  .lineage-link{font-family:var(--mono);font-size:12px;color:var(--accent-2);cursor:pointer}
+  .close-x{position:absolute;top:16px;right:18px;background:none;border:0;color:var(--ink-faint);font-size:22px;cursor:pointer}
+  /* rich drawer */
+  .d-meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px}
+  .badge.soft{background:var(--bg-card);border:1px solid var(--line);color:var(--ink-faint)}
+  .field p.lead{font-size:15px;color:var(--ink);line-height:1.5}
+  .dim{color:var(--ink-faint)!important;font-size:12.5px}
+  .mono-sm{font-family:var(--mono);font-size:11.5px;color:var(--ink-faint)}
+  .prog{height:6px;background:var(--bg-card);border-radius:99px;overflow:hidden;margin-bottom:6px}
+  .prog-bar{height:100%;background:var(--goal);border-radius:99px}
+  .stage{margin:6px 0 22px;border-left:2px solid var(--line-soft);padding-left:0}
+  .stage-step{display:flex;gap:12px;padding:10px 0 10px 16px;position:relative}
+  .stage-step .dot{position:absolute;left:-7px;top:14px;width:11px;height:11px;border-radius:50%;background:var(--bg);border:2px solid var(--line);flex:none}
+  .stage-step.has .dot{border-color:var(--accent);background:var(--accent)}
+  .stage-step b{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-dim);display:block;margin-bottom:3px}
+  .stage-step.has b{color:var(--ink)}
+  .stage-step p{margin:0;font-size:13px;color:var(--ink-dim)}
+  .stage-step:not(.has) p{color:var(--ink-faint);font-style:italic}
+  .ln-row{display:flex;align-items:center;gap:9px;padding:4px 0}
+  .ln-tag{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);background:var(--bg-card);border:1px solid var(--line);border-radius:5px;padding:2px 6px;flex:none;width:62px;text-align:center}
+  /* lineage v2 */
+  .lin-summary{display:flex;gap:18px;flex-wrap:wrap;font-family:var(--mono);font-size:11px;color:var(--ink-faint);margin-bottom:14px}
+  .lin-summary b{color:var(--ink)}
+  .lin-legend{display:flex;gap:16px;flex-wrap:wrap;font-family:var(--mono);font-size:11px;color:var(--ink-faint);margin-top:14px}
+  .lin-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:middle}
+  .node .nl1{font-family:var(--mono);font-size:11.5px;fill:var(--ink)}
+  .node .nl2{font-family:var(--sans);font-size:10px;fill:var(--ink-faint)}
+  .node .hublabel{font-family:var(--mono);font-size:9px;fill:var(--accent);letter-spacing:.08em}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="rail">
+    <div class="brand"><h1>ar<span class="u">cs</span></h1><span class="v">v1</span></div>
+    <div class="mini">
+      <span><b id="m-total">0</b> arcs</span>
+      <span class="o"><b id="m-open">0</b> active</span>
+      <span class="g"><b id="m-goal">0</b> goals</span>
+    </div>
+
+    <h5>view</h5>
+    <button class="vbtn" data-view="board" aria-selected="true"><span class="ic">▤</span> board</button>
+    <button class="vbtn" data-view="lineage" aria-selected="false"><span class="ic">⤳</span> lineage</button>
+    <button class="vbtn" data-view="timeline" aria-selected="false"><span class="ic">◷</span> timeline</button>
+    <button class="vbtn" data-view="map" aria-selected="false"><span class="ic">▦</span> map</button>
+
+    <h5>display</h5>
+    <div class="ctl">
+      <label>group by</label>
+      <select id="groupBy">
+        <option value="none">— flat stream</option>
+        <option value="status">status</option>
+        <option value="cluster">theme / cluster</option>
+        <option value="release">release</option>
+      </select>
+    </div>
+    <div class="ctl">
+      <label>color by</label>
+      <select id="colorBy">
+        <option value="status">status</option>
+        <option value="cluster">theme</option>
+      </select>
+    </div>
+    <div class="toggle on" id="tgClosed"><span>show closed</span><span class="sw"></span></div>
+    <div class="toggle" id="tgPh"><span>hide blank goals</span><span class="sw"></span></div>
+    <div class="toggle" id="tgDense"><span>compact rows</span><span class="sw"></span></div>
+  </aside>
+
+  <main id="main">
+    <div class="view-head"><h2 id="vh-title">board</h2><p id="vh-sub"></p></div>
+    <div class="view-body" id="body"></div>
+  </main>
+</div>
+
+<div class="drawer-bg" id="drawerBg"></div>
+<aside class="drawer" id="drawer"><button class="close-x" id="closeX">×</button><div id="drawerBody"></div></aside>
+
+<script>
+const CLUSTERS={
+  landing:{name:"landing & docs",cc:"var(--c-landing)"},
+  method:{name:"method & model",cc:"var(--c-method)"},
+  cli:{name:"cli hardening",cc:"var(--c-cli)"},
+  release:{name:"release & culture",cc:"var(--c-release)"},
+  quality:{name:"quality & roast",cc:"var(--c-quality)"},
+  infra:{name:"infra / deploy",cc:"var(--c-infra)"},
+  bench:{name:"benchmark",cc:"var(--c-bench)"},
+};
+const ARCS=[
+  {n:1,slug:"subagent-delegation",goal:"toggleable rules layer; subagents rule ON by default",st:"closed",cl:"method",rel:"0.1.0"},
+  {n:2,slug:"close-arcs-underscore",goal:"close an arc by renaming NN-slug → __NN-slug__",st:"closed",cl:"method",rel:"0.1.0"},
+  {n:3,slug:"changelog",goal:"add CHANGELOG.md (Keep a Changelog) — 0.1.0 baseline",st:"closed",cl:"release",rel:"0.1.0"},
+  {n:4,slug:"close-requires-output",goal:"arcs close refuses empty output/; -f overrides",st:"closed",cl:"method",rel:"0.1.0"},
+  {n:5,slug:"unify-goals-into-single-arc-stream",goal:"drop .arcs/goals/; one numbered stream, goal = NN-@slug",st:"closed",cl:"method",rel:"0.1.0"},
+  {n:6,slug:"@landing-essence-first",goal:"rebuild the landing so payoff + how-to-start land instantly",st:"closed",isGoal:true,sub:1,cl:"landing",rel:"0.1.0"},
+  {n:7,slug:"move-rules-to-global-library",goal:"rule bodies global; on/off via config rules=; local override",st:"closed",cl:"method",rel:"0.1.0"},
+  {n:9,slug:"add-ideas-candidate-backlog",goal:"candidates backlog — .arcs/candidates/ with from:; promote",st:"closed",cl:"method",rel:"0.1.0"},
+  {n:10,slug:"@immutable-goals-and-chains",goal:"goal intent immutable — aim changes spawn supersedes-linked arcs",st:"closed",isGoal:true,sub:3,from:7,cl:"method",rel:"0.2.0"},
+  {n:11,slug:"fix-doc-drift-and-orphan",goal:"fix doc drift + delete empty untracked 08 ghost",st:"closed",cl:"landing",rel:"0.2.0"},
+  {n:12,slug:"review-arc-writing-quality",goal:"judge the writing quality of every arc/goal as a method unit",st:"closed",from:11,cl:"quality",rel:"0.2.0"},
+  {n:13,slug:"@simple-landing-and-deep-docs",goal:"value-first landing; deep docs separate; ship 0.2.0",st:"closed",isGoal:true,sub:2,cl:"landing",rel:"0.2.0"},
+  {n:14,slug:"agent-first-quickstart-and-os-setup",goal:"agent-driven path + real per-OS setup (WSL/Git Bash)",st:"closed",cl:"landing",rel:"0.2.0"},
+  {n:15,slug:"setup-vercel-git-autodeploy",goal:"wire Vercel push-to-deploy → serve docs/",st:"closed",cl:"infra",rel:"0.2.0"},
+  {n:16,slug:"landing-benefits-and-docs-mobile-nav",goal:"restore four concrete benefits + compact mobile docs nav",st:"closed",cl:"landing",rel:"0.2.0"},
+  {n:17,slug:"drop-goal-v2-framing",goal:"",st:"closed",cl:"method",rel:"0.2.0"},
+  {n:18,slug:"version-aware-update",goal:"version-aware update — nudge on new release, force on breaking",st:"closed",cl:"cli",rel:"0.3.1"},
+  {n:19,slug:"russian-in-cli-templates",goal:"resolve the 'russian in bin/arcs' flag — verdict + decision",st:"closed",from:18,cl:"cli",rel:"0.3.1"},
+  {n:20,slug:"landing-no-start-no-wow",goal:"landing wow-moment + concrete first move (pain→relief)",st:"closed",cl:"landing",rel:"0.3.1"},
+  {n:21,slug:"checklist-key-dots-break-matching",goal:"",st:"closed",from:13,cl:"cli",rel:"0.3.1"},
+  {n:22,slug:"cut-release-0.3.1",goal:"",st:"closed",cl:"release",rel:"0.3.1"},
+  {n:23,slug:"roast-arcs-method-and-cli",goal:"adversarial roast — 74 findings + next-arc candidates",st:"closed",cl:"quality",rel:"0.4.0"},
+  {n:24,slug:"gate-enforcement-is-real",goal:"",st:"closed",from:23,cl:"cli",rel:"0.4.0"},
+  {n:25,slug:"release-culture-and-checks",goal:"",st:"closed",from:23,cl:"release",rel:"0.4.0"},
+  {n:26,slug:"design-checklist-items-as-arcs",goal:"",st:"closed",cl:"method",rel:"0.4.0"},
+  {n:27,slug:"research-as-arc-kind",goal:'settle whether "research" should be a kind of arc — verdict: no',st:"closed",cl:"method",rel:"0.4.0"},
+  {n:28,slug:"arcs-self-migration-strategy",goal:"how arcs evolves on-disk format without breaking projects",st:"closed",cl:"method",rel:"0.4.0"},
+  {n:29,slug:"implement-checklist-items-as-arcs",goal:"model B — a goal's checklist IS its sub-arcs",st:"closed",from:26,cl:"method",rel:"0.4.0"},
+  {n:30,slug:"harden-slug-and-arg-handling",goal:"",st:"active",from:23,cl:"cli",rel:"next"},
+  {n:31,slug:"fix-goal-lifecycle-ops",goal:"",st:"active",from:23,cl:"cli",rel:"next"},
+  {n:32,slug:"@benchmark-pluggable-structures",goal:"bench stand: arcs vs bare on tokens/time/quality",st:"active",isGoal:true,sub:3,cl:"bench",rel:"next"},
+];
+const byN=Object.fromEntries(ARCS.map(a=>[a.n,a]));
+// real input/output/workspace pulled from arc.md
+const META={
+  1:{out:"output/result.md — rules system + subagents rule, changed files, decisions, verification.",ws:1},
+  2:{out:"output/result.md — close/reopen commands, next_num fix, changed files, verification.",ws:0},
+  3:{out:"output/result.md — CHANGELOG.md added; v0.1.0 tag caveat.",ws:0},
+  4:{out:"output/result.md — guard + -f flag, changed files, verification.",ws:0},
+  5:{out:"output/result.md — model, CLI changes, migration, docs (parallel subagents), verification.",ws:0},
+  6:{ws:0},
+  7:{out:"output/result.md — global lib + config toggle, CLI, pipefail bug fix, migration, verification.",ws:0},
+  9:{out:"output/result.md — CLI, relocation of goal-v2 to candidates, docs sync (parallel subagents), verification.",ws:0},
+  10:{ws:2},
+  11:{inp:"input/scope.md — 6 fixes (C1 C2 H1 H3 M1 M2) from the arc-10 coherence audit",out:"output/result.md — per-item status + every file touched",ws:1},
+  12:{out:"output/result.md — per-arc verdict table, worst offenders, cross-cutting patterns, prioritized recs, the exact template-wording call.",ws:1},
+  13:{ws:0},
+  14:{inp:"input/spec.md — agent-first quickstart + per-OS setup, from live-page feedback",out:"output/result.md — per-surface changes + files touched + verification (index.html, docs.html, DEPLOY.md)",ws:1},
+  15:{out:"output/result.md — git connected, vercel.json outputDirectory=docs, prod auto-deploy proven",ws:0},
+  16:{out:"output/result.md — what changed per surface (index.html, docs.html, style.css) + verification at 375/320px.",ws:8},
+  17:{ws:0},
+  18:{out:"output/result.md — VERSION/MIN_VERSION + arcs version/check-update + hook nudge + gate block",ws:1},
+  19:{out:"output/result.md — no change: it's intentional en/ru/es i18n; kept by decision",ws:1},
+  20:{out:"output/result.md — §00b before→after band + §03 first-move scene; verified desktop+mobile",ws:0},
+  21:{ws:1},22:{ws:0},23:{ws:0},24:{ws:1},25:{ws:0},26:{ws:0},
+  27:{inp:'input/00-concept-from-research-research.md — the "research = kind of arc" concept + tensions',out:"output/01-verdict-no-change-to-arcs.md — reject the kind; research = run(arc) + product(doc)",ws:1},
+  28:{inp:"idea: as arcs changes format, N drifting projects must keep working or auto-upgrade; changelog-driven self-heal. Surfaced while parking arc 07.",out:"output/verdict.md — 12-critic consortium roast + recommended minimal design (DECISION)",ws:0},
+  29:{inp:"input/07-implement-checklist-items-as-arcs.md — promoted candidate: model B decided, 4 open Qs resolved (via arc 28)",out:"output/result.md — what shipped (CLI model B + docs + 0.4.0) + verification",ws:0},
+  30:{ws:0},31:{ws:0},32:{ws:0},
+};
+ARCS.forEach(a=>Object.assign(a,META[a.n]||{}));
+const idStr=a=>(a.st==="closed"?"__":"")+String(a.n).padStart(2,"0")+"-"+a.slug+(a.st==="closed"?"__":"");
+const esc=s=>s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+const trunc=(s,n)=>s.length>n?s.slice(0,n-1)+"…":s;
+
+document.getElementById("m-total").textContent=ARCS.length;
+document.getElementById("m-open").textContent=ARCS.filter(a=>a.st==="active").length;
+document.getElementById("m-goal").textContent=ARCS.filter(a=>a.isGoal).length;
+
+const ST={view:"board",groupBy:"none",colorBy:"status",showClosed:true,hidePh:false,dense:false};
+
+function visibleArcs(){
+  let xs=ARCS.slice();
+  if(!ST.showClosed) xs=xs.filter(a=>a.st!=="closed");
+  if(ST.hidePh) xs=xs.filter(a=>a.goal||a.isGoal);
+  return xs;
+}
+function leftColor(a){
+  if(ST.colorBy==="cluster") return CLUSTERS[a.cl].cc;
+  return a.isGoal?"var(--goal)":a.st==="active"?"var(--open)":"transparent";
+}
+function rowHTML(a){
+  const badge=a.isGoal?`<span class="badge goal">@ goal${a.sub?` ${a.sub}✓`:""}</span>`
+    :a.st==="active"?`<span class="badge active">● active</span>`:`<span class="badge closed">done</span>`;
+  return `<div class="arc-row${a.isGoal?" goal":""}${a.st==="closed"?" closed":""}${a.st==="active"?" active":""}"
+      style="border-left-color:${leftColor(a)}" data-n="${a.n}">
+    <span class="id">${idStr(a)}</span>
+    <span class="title">${a.goal?esc(a.goal):'<span class="ph">— blank —</span>'}</span>
+    <span>${badge}</span></div>`;
+}
+function grouped(){
+  const xs=visibleArcs();
+  if(ST.groupBy==="none") return [["",xs]];
+  if(ST.groupBy==="status"){
+    return [["active",xs.filter(a=>a.st==="active")],["goal arcs",xs.filter(a=>a.isGoal&&a.st!=="active")],["closed",xs.filter(a=>a.st==="closed"&&!a.isGoal)]];
+  }
+  if(ST.groupBy==="cluster"){
+    return Object.keys(CLUSTERS).map(k=>[CLUSTERS[k].name,xs.filter(a=>a.cl===k),CLUSTERS[k].cc]);
+  }
+  if(ST.groupBy==="release"){
+    const rels=["0.1.0","0.2.0","0.3.1","0.4.0","next"];
+    return rels.map(r=>[r==="next"?"unreleased":r,xs.filter(a=>a.rel===r)]);
+  }
+}
+const VIEWMETA={
+  board:["board","STREAM — every arc as a row · respects display settings"],
+  lineage:["lineage","how arcs spawn each other — from: / supersedes: edges"],
+  timeline:["timeline","chronology by release — what shipped when"],
+  map:["map","arcs clustered by theme — the shape of the work"],
+};
+
+function render(){
+  const [t,s]=VIEWMETA[ST.view];
+  document.getElementById("vh-title").textContent=t;
+  document.getElementById("vh-sub").textContent=s;
+  const body=document.getElementById("body");
+  body.className="view-body"+(ST.dense?" density-compact":"");
+  if(ST.view==="board") body.innerHTML=renderBoard();
+  else if(ST.view==="lineage") body.innerHTML=renderLineage();
+  else if(ST.view==="timeline") body.innerHTML=renderTimeline();
+  else if(ST.view==="map") body.innerHTML=renderMap();
+  body.querySelectorAll("[data-n]").forEach(el=>el.onclick=()=>openDrawer(byN[el.dataset.n]));
+  if(ST.view==="lineage") wireGraph();
+}
+const kidCount=n=>ARCS.filter(a=>a.from===n).length;
+function rowRich(a){
+  const badge=a.isGoal?`<span class="badge goal">@ goal${a.sub?` ${a.sub}✓`:""}</span>`
+    :a.st==="active"?`<span class="badge active">● active</span>`:`<span class="badge closed">done</span>`;
+  const kc=kidCount(a.n);
+  const meta=`<span class="arc-meta">
+    ${kc?`<span class="g spawn" title="spawned ${kc}">⑂${kc}</span>`:""}
+    ${a.from?`<span class="g from" title="from ${a.from}">↳${String(a.from).padStart(2,"0")}</span>`:""}
+    <span class="odot" title="${a.out?"output written":"no output"}" style="background:${a.out?"var(--open)":"var(--line)"}"></span>
+    <span class="rel">${a.rel==="next"?"—":"v"+a.rel}</span>
+  </span>`;
+  return `<div class="arc-row${a.isGoal?" goal":""}${a.st==="closed"?" closed":""}${a.st==="active"?" active":""}"
+      style="border-left-color:${leftColor(a)}" data-n="${a.n}">
+    <span class="id">${idStr(a)}</span>
+    <span class="title">${a.goal?esc(a.goal):'<span class="ph">— blank —</span>'}</span>
+    ${meta}<span>${badge}</span></div>`;
+}
+function renderPulse(){
+  const total=ARCS.length,active=ARCS.filter(a=>a.st==="active").length,
+    goals=ARCS.filter(a=>a.isGoal).length,closed=ARCS.filter(a=>a.st==="closed").length,
+    rels=[...new Set(ARCS.map(a=>a.rel).filter(r=>r!=="next"))].length,
+    pct=Math.round(closed/total*100);
+  return `<div class="pulse">
+    <div class="ptile"><b>${total}</b><span>arcs total</span></div>
+    <div class="ptile active"><b>${active}</b><span>in flight</span></div>
+    <div class="ptile goal"><b>${goals}</b><span>goal arcs</span></div>
+    <div class="ptile rel"><b>${rels}</b><span>releases shipped</span></div>
+    <div class="ptile"><b>${pct}%</b><span>closed</span></div>
+  </div>`;
+}
+function renderNow(){
+  const act=ARCS.filter(a=>a.st==="active");
+  if(!act.length) return "";
+  return `<div class="now"><h3>in flight now · ${act.length}</h3><div class="now-grid">${act.map(a=>`
+    <div class="now-card${a.isGoal?" goal":""}" data-n="${a.n}">
+      <div class="nc-id">${idStr(a)}</div>
+      <div class="nc-goal">${a.goal?esc(a.goal):'<span style="color:var(--ink-faint);font-style:italic">— no one-liner yet —</span>'}</div>
+      <div class="nc-foot">
+        ${a.isGoal&&a.sub?`<span class="tg">${a.sub} sub-arcs</span>`:""}
+        <span class="tg">${CLUSTERS[a.cl].name}</span>
+        ${a.from?`<span class="tg">↳ from ${String(a.from).padStart(2,"0")}</span>`:""}
+      </div>
+    </div>`).join("")}</div></div>`;
+}
+function renderBoard(){
+  const stream=grouped().map(([label,xs,cc])=>{
+    if(!xs.length) return "";
+    const head=label?`<div class="group-label">${cc?`<span class="dot" style="background:${cc}"></span>`:""}${label} <span style="color:var(--ink-faint)">· ${xs.length}</span></div>`:"";
+    return head+xs.map(rowRich).join("");
+  }).join("");
+  const streamHead=`<div class="group-label" style="margin-top:4px">stream <span style="color:var(--ink-faint)">· ${visibleArcs().length} shown</span></div>`;
+  return renderPulse()+renderNow()+(ST.groupBy==="none"?streamHead:"")+stream;
+}
+function renderTimeline(){
+  const rels=["0.1.0","0.2.0","0.3.1","0.4.0","next"];
+  return `<div class="tl">`+rels.map(r=>{
+    const xs=visibleArcs().filter(a=>a.rel===r);
+    if(!xs.length) return "";
+    return `<div class="tl-rel"><b>${r==="next"?"unreleased":"v"+r}</b><span>· ${xs.length} arcs</span></div>`+
+      xs.map(a=>`<div class="tl-item ${a.st} ${a.isGoal?"goal":""}" data-n="${a.n}">
+        <span class="id">${idStr(a)}</span> &nbsp;<span class="t">${a.goal?esc(trunc(a.goal,64)):"—"}</span></div>`).join("");
+  }).join("")+`</div>`;
+}
+function renderMap(){
+  return `<div class="map">`+Object.keys(CLUSTERS).map(k=>{
+    const c=CLUSTERS[k],xs=visibleArcs().filter(a=>a.cl===k);
+    if(!xs.length) return "";
+    return `<div class="cluster" style="--cc:${c.cc}">
+      <h3>${c.name}</h3><div class="cnt">${xs.length} arcs · ${xs.filter(a=>a.st==="active").length} active</div>
+      ${xs.map(a=>`<span class="chip${a.st==="active"?" active":""}" data-n="${a.n}"><span class="d" style="background:${a.isGoal?'var(--goal)':a.st==='active'?'var(--open)':'var(--ink-faint)'}"></span>${String(a.n).padStart(2,"0")}·${trunc(a.slug.replace(/^@/,""),16)}</span>`).join("")}
+    </div>`;
+  }).join("")+`</div>`;
+}
+const strokeFor=a=>ST.colorBy==="cluster"?CLUSTERS[a.cl].cc:(a.isGoal?"var(--goal)":a.st==="active"?"var(--open)":"var(--line)");
+const stDot=a=>a.isGoal?"var(--goal)":a.st==="active"?"var(--open)":"var(--ink-faint)";
+function renderLineage(){
+  const isHub=n=>ARCS.filter(a=>a.from===n).length>=3;
+  const parents=[...new Set(ARCS.filter(a=>a.from).map(a=>a.from))]
+    .sort((p,q)=>ARCS.filter(a=>a.from===q).length-ARCS.filter(a=>a.from===p).length); // hubs first
+  const linkedSet=new Set();parents.forEach(p=>{linkedSet.add(p);ARCS.filter(a=>a.from===p).forEach(k=>linkedSet.add(k.n))});
+
+  const colW=242,nodeH=50,rowGap=22,padX=24,padY=24,colGap=108;
+  const positions={};let y=padY;
+  parents.forEach(p=>{
+    const kids=ARCS.filter(a=>a.from===p&&(ST.showClosed||a.st!=="closed"));
+    const span=Math.max(1,kids.length),blockH=span*nodeH+(span-1)*8;
+    positions[p]={x:padX,y:y+(blockH-nodeH)/2};
+    kids.forEach((k,i)=>positions[k.n]={x:padX+colW+colGap,y:y+i*(nodeH+8)});
+    y+=blockH+rowGap;
+  });
+  const W=padX+colW+colGap+colW+padX,H=y+padY;
+
+  const nodeSVG=(n,p)=>{const a=byN[n];if(!a)return"";const hub=isHub(+n);
+    return `<g class="node${hub?" hub":""}${a.st==="active"?" active":""}" data-n="${n}" style="--stroke:${strokeFor(a)}">
+      <rect x="${p.x}" y="${p.y}" width="${colW}" height="${nodeH}" rx="11" style="stroke:${strokeFor(a)};stroke-width:${hub?2:1.3}"/>
+      <circle cx="${p.x+colW-15}" cy="${p.y+15}" r="4.5" fill="${stDot(a)}"/>
+      ${hub?`<text class="hublabel" x="${p.x+13}" y="${p.y-6}">⬡ HUB · spawned ${ARCS.filter(x=>x.from===+n).length}</text>`:""}
+      <text class="nl1" x="${p.x+13}" y="${p.y+21}">${String(a.n).padStart(2,"0")}·${trunc(a.slug.replace(/^@/,""),22)}</text>
+      <text class="nl2" x="${p.x+13}" y="${p.y+38}">${a.goal?esc(trunc(a.goal,34)):"— blank —"}</text>
+    </g>`;};
+
+  let edges="",nodes="";
+  Object.entries(positions).forEach(([n,p])=>nodes+=nodeSVG(n,p));
+  ARCS.forEach(a=>{if(!a.from||!positions[a.from]||!positions[a.n])return;
+    const s=positions[a.from],t=positions[a.n],x1=s.x+colW,y1=s.y+nodeH/2,x2=t.x,y2=t.y+nodeH/2,mx=(x1+x2)/2;
+    edges+=`<path class="edge ${isHub(a.from)?"from-hub":""}" d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2-8},${y2}"/>`;});
+
+  const linkedN=linkedSet.size,unlinked=ARCS.length-linkedN,hubN=parents.filter(p=>isHub(p)).length;
+  return `<div class="lin-summary">
+      <span><b>${linkedN}</b> arcs in lineage</span>
+      <span><b>${parents.length}</b> spawned children</span>
+      <span><b>${hubN}</b> hub${hubN!==1?"s":""}</span>
+      <span><b>${unlinked}</b> standalone (no recorded link)</span>
+    </div>
+    <div class="graph-shell"><svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+      <defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="var(--ink-faint)"/></marker></defs>
+      ${edges}${nodes}</svg></div>
+    <div class="lin-legend">
+      <span><i style="background:var(--accent)"></i>hub (≥3 children)</span>
+      <span><i style="background:var(--open)"></i>active</span>
+      <span><i style="background:var(--goal)"></i>goal arc</span>
+      <span>● dot = status · border = ${ST.colorBy==="cluster"?"theme":"status"} · arrow = from</span>
+    </div>`;
+}
+function wireGraph(){document.querySelectorAll(".node").forEach(g=>g.onclick=()=>openDrawer(byN[g.dataset.n]))}
+
+// drawer
+const drawer=document.getElementById("drawer"),bg=document.getElementById("drawerBg");
+function openDrawer(a){
+  if(!a)return;
+  const parent=a.from?byN[a.from]:null,kids=ARCS.filter(x=>x.from===a.n);
+  const stBadge=a.st==="active"?'<span class="badge active">● active</span>':'<span class="badge closed">done</span>';
+  const wsTxt=a.ws>0?`${a.ws} working file${a.ws>1?"s":""}`:"empty — no intermediate work";
+  document.getElementById("drawerBody").innerHTML=`
+    <div class="d-id">${idStr(a)}</div>
+    <h3>${esc(a.slug.replace(/^@/,""))}</h3>
+    <div class="d-meta">
+      ${stBadge}
+      ${a.isGoal?'<span class="badge goal">@ goal</span>':""}
+      <span class="badge soft">${CLUSTERS[a.cl].name}</span>
+      <span class="badge soft">${a.rel==="next"?"unreleased":"v"+a.rel}</span>
+    </div>
+
+    <div class="field"><h4>goal</h4><p class="lead">${a.goal?esc(a.goal):"— no one-liner written —"}</p></div>
+
+    ${a.isGoal&&a.sub?`<div class="field"><h4>checklist · sub-arcs</h4>
+      <div class="prog"><div class="prog-bar" style="width:100%"></div></div>
+      <p class="dim">${a.sub} / ${a.sub} sub-arcs closed</p></div>`:""}
+
+    <div class="stage">
+      <div class="stage-step ${a.inp?"has":""}"><span class="dot"></span><div><b>input</b><p>${a.inp?esc(a.inp):"— nothing recorded —"}</p></div></div>
+      <div class="stage-step ${a.ws>0?"has":""}"><span class="dot"></span><div><b>workspace</b><p>${wsTxt}</p></div></div>
+      <div class="stage-step ${a.out?"has":""}"><span class="dot"></span><div><b>output</b><p>${a.out?esc(a.out):"— not yet written —"}</p></div></div>
+    </div>
+
+    ${(parent||kids.length)?`<div class="field"><h4>lineage</h4>
+      ${parent?`<div class="ln-row"><span class="ln-tag">from</span><span class="lineage-link" data-n="${parent.n}">${idStr(parent)}</span></div>`:""}
+      ${kids.map(k=>`<div class="ln-row"><span class="ln-tag">spawned</span><span class="lineage-link" data-n="${k.n}">${idStr(k)}</span></div>`).join("")}
+    </div>`:`<div class="field"><h4>lineage</h4><p class="dim">no recorded links — standalone arc</p></div>`}
+
+    <div class="field"><h4>path</h4><p class="mono-sm">.arcs/arcs/${idStr(a)}/</p></div>`;
+  drawer.classList.add("show");bg.classList.add("show");
+  drawer.querySelectorAll(".lineage-link").forEach(l=>l.onclick=()=>openDrawer(byN[l.dataset.n]));
+}
+const closeDrawer=()=>{drawer.classList.remove("show");bg.classList.remove("show")};
+document.getElementById("closeX").onclick=closeDrawer;bg.onclick=closeDrawer;
+addEventListener("keydown",e=>e.key==="Escape"&&closeDrawer());
+
+// wiring
+document.querySelectorAll(".vbtn").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll(".vbtn").forEach(x=>x.setAttribute("aria-selected","false"));
+  b.setAttribute("aria-selected","true");ST.view=b.dataset.view;render();
+});
+document.getElementById("groupBy").onchange=e=>{ST.groupBy=e.target.value;render()};
+document.getElementById("colorBy").onchange=e=>{ST.colorBy=e.target.value;render()};
+function tog(id,key){const el=document.getElementById(id);el.onclick=()=>{el.classList.toggle("on");ST[key]=el.classList.contains("on");render()}}
+tog("tgClosed","showClosed");tog("tgPh","hidePh");tog("tgDense","dense");
+ST.showClosed=true; // tgClosed starts on
+
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>arcs · dashboard prototype v0</title>
+<style>
+  :root{
+    --bg: oklch(16% 0.012 250);
+    --bg-raise: oklch(20% 0.014 250);
+    --bg-card: oklch(23% 0.016 250);
+    --line: oklch(32% 0.018 250);
+    --line-soft: oklch(27% 0.014 250);
+    --ink: oklch(94% 0.01 250);
+    --ink-dim: oklch(70% 0.012 250);
+    --ink-faint: oklch(54% 0.012 250);
+    --accent: oklch(80% 0.16 78);      /* amber */
+    --accent-2: oklch(72% 0.15 200);   /* teal */
+    --open: oklch(82% 0.17 145);       /* green = active */
+    --closed: oklch(58% 0.01 250);
+    --goal: oklch(78% 0.17 320);       /* magenta = goal */
+    --radius: 14px;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:
+      radial-gradient(1200px 600px at 80% -10%, oklch(24% 0.03 78 / .25), transparent 60%),
+      radial-gradient(900px 500px at -10% 110%, oklch(24% 0.03 200 / .2), transparent 55%),
+      var(--bg);
+    color:var(--ink);
+    font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;
+    line-height:1.45;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:34px 28px 80px}
+
+  /* ---- header ---- */
+  header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-bottom:8px}
+  .brand{display:flex;align-items:baseline;gap:14px}
+  .brand h1{font-family:var(--mono);font-size:30px;letter-spacing:-.02em;margin:0;font-weight:600}
+  .brand h1 .u{color:var(--accent)}
+  .brand .tag{color:var(--ink-faint);font-size:13px;font-family:var(--mono)}
+  .stats{display:flex;gap:26px}
+  .stat{text-align:right}
+  .stat b{display:block;font-family:var(--mono);font-size:24px;font-weight:600;line-height:1}
+  .stat span{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--ink-faint)}
+  .stat.open b{color:var(--open)} .stat.goal b{color:var(--goal)}
+
+  /* ---- tabs ---- */
+  nav.tabs{display:flex;gap:4px;margin:26px 0 22px;border-bottom:1px solid var(--line-soft)}
+  nav.tabs button{
+    appearance:none;background:none;border:0;color:var(--ink-faint);
+    font-family:var(--mono);font-size:13px;padding:10px 16px;cursor:pointer;
+    border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .15s,border-color .15s;
+  }
+  nav.tabs button:hover{color:var(--ink-dim)}
+  nav.tabs button[aria-selected=true]{color:var(--ink);border-color:var(--accent)}
+
+  .view{display:none} .view.active{display:block;animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+  /* ---- BOARD ---- */
+  .stream-label{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--ink-faint);text-transform:uppercase;margin:0 0 12px}
+  .arc-row{
+    display:grid;grid-template-columns:108px 1fr auto;gap:16px;align-items:center;
+    padding:11px 16px;border:1px solid transparent;border-radius:11px;cursor:pointer;
+    transition:background .14s,border-color .14s;
+  }
+  .arc-row:hover{background:var(--bg-raise);border-color:var(--line-soft)}
+  .arc-row .id{font-family:var(--mono);font-size:13px;color:var(--ink-dim)}
+  .arc-row.goal .id{color:var(--goal)}
+  .arc-row.closed{opacity:.5}
+  .arc-row.active{background:oklch(82% 0.17 145 / .07);border-color:oklch(82% 0.17 145 / .3)}
+  .arc-row .title{font-size:14px;color:var(--ink)}
+  .arc-row.closed .title{color:var(--ink-dim)}
+  .arc-row .title .placeholder{color:var(--ink-faint);font-style:italic}
+  .badge{font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:99px;letter-spacing:.06em;white-space:nowrap}
+  .badge.active{background:oklch(82% 0.17 145 / .16);color:var(--open)}
+  .badge.closed{background:oklch(58% 0.01 250 / .14);color:var(--closed)}
+  .badge.goal{background:oklch(78% 0.17 320 / .16);color:var(--goal)}
+  .sub-prog{font-family:var(--mono);font-size:11px;color:var(--ink-faint);margin-left:8px}
+
+  /* ---- LINEAGE GRAPH ---- */
+  .graph-shell{background:var(--bg-raise);border:1px solid var(--line-soft);border-radius:var(--radius);padding:8px;overflow:auto}
+  svg{display:block;width:100%;height:auto;min-width:760px}
+  .node rect{fill:var(--bg-card);stroke:var(--line);stroke-width:1.2;rx:9;transition:stroke .15s,fill .15s}
+  .node:hover rect{stroke:var(--accent);fill:var(--bg-raise);cursor:pointer}
+  .node text{font-family:var(--mono);font-size:11px;fill:var(--ink-dim)}
+  .node.hub rect{stroke:var(--accent);stroke-width:1.6}
+  .node.goal rect{stroke:var(--goal)}
+  .node.active rect{stroke:var(--open)}
+  .edge{stroke:var(--line);stroke-width:1.4;fill:none;marker-end:url(#arrow)}
+  .edge.from-hub{stroke:var(--accent);opacity:.65}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;margin-top:14px;font-family:var(--mono);font-size:11px;color:var(--ink-faint)}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:middle}
+
+  /* ---- DETAIL DRAWER ---- */
+  .drawer-bg{position:fixed;inset:0;background:oklch(10% 0.01 250 / .55);opacity:0;pointer-events:none;transition:opacity .2s;z-index:5}
+  .drawer-bg.show{opacity:1;pointer-events:auto}
+  .drawer{
+    position:fixed;top:0;right:0;height:100%;width:min(460px,92vw);z-index:6;
+    background:var(--bg-raise);border-left:1px solid var(--line);
+    transform:translateX(100%);transition:transform .26s cubic-bezier(.16,1,.3,1);
+    padding:28px 26px;overflow-y:auto;
+  }
+  .drawer.show{transform:none}
+  .drawer .d-id{font-family:var(--mono);font-size:12px;color:var(--ink-faint)}
+  .drawer h3{font-family:var(--mono);font-size:18px;margin:6px 0 16px;letter-spacing:-.01em}
+  .drawer .row{display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap}
+  .field{margin-bottom:20px}
+  .field h4{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint);margin:0 0 7px}
+  .field p{margin:0;font-size:14px;color:var(--ink-dim)}
+  .flow{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px}
+  .flow span{padding:6px 11px;border:1px solid var(--line);border-radius:8px;color:var(--ink-dim)}
+  .flow .arr{border:0;color:var(--ink-faint)}
+  .lineage-link{font-family:var(--mono);font-size:12px;color:var(--accent-2);cursor:pointer}
+  .close-x{position:absolute;top:18px;right:18px;background:none;border:0;color:var(--ink-faint);font-size:22px;cursor:pointer}
+  .foot{margin-top:48px;font-family:var(--mono);font-size:11px;color:var(--ink-faint);text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>ar<span class="u">cs</span></h1>
+      <span class="tag">// dashboard prototype · v0</span>
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="s-total">0</b><span>arcs</span></div>
+      <div class="stat open"><b id="s-open">0</b><span>active</span></div>
+      <div class="stat"><b id="s-closed">0</b><span>closed</span></div>
+      <div class="stat goal"><b id="s-goal">0</b><span>goals</span></div>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button aria-selected="true" data-view="board">▤ board</button>
+    <button aria-selected="false" data-view="lineage">⤳ lineage</button>
+  </nav>
+
+  <section class="view active" id="view-board">
+    <p class="stream-label">STREAM — newest last · click any arc</p>
+    <div id="board"></div>
+  </section>
+
+  <section class="view" id="view-lineage">
+    <div class="graph-shell"><div id="graph"></div></div>
+    <div class="legend">
+      <span><i style="background:var(--accent)"></i>hub (spawned many)</span>
+      <span><i style="background:var(--goal)"></i>goal arc</span>
+      <span><i style="background:var(--open)"></i>active</span>
+      <span>arrow = from / supersedes</span>
+    </div>
+  </section>
+
+  <p class="foot">read-only over .arcs/ — throwaway prototype, not the real thing yet</p>
+</div>
+
+<div class="drawer-bg" id="drawerBg"></div>
+<aside class="drawer" id="drawer">
+  <button class="close-x" id="closeX">×</button>
+  <div id="drawerBody"></div>
+</aside>
+
+<script>
+// ---- real data pulled from .arcs/arcs ----
+const ARCS = [
+  {n:1,slug:"subagent-delegation",goal:"toggleable rules layer; subagents rule (delegate arcs + parallelize) ON by default",st:"closed"},
+  {n:2,slug:"close-arcs-underscore",goal:"close an arc by renaming NN-slug → __NN-slug__ (+ status done); numbering counts closed",st:"closed"},
+  {n:3,slug:"changelog",goal:"add CHANGELOG.md (Keep a Changelog) — Unreleased + 0.1.0 baseline",st:"closed"},
+  {n:4,slug:"close-requires-output",goal:"arcs close refuses empty output/ (a closed arc must carry a self-contained result); -f overrides",st:"closed"},
+  {n:5,slug:"unify-goals-into-single-arc-stream",goal:"drop .arcs/goals/; one numbered stream, goal = NN-@slug; descriptive slugs",st:"closed"},
+  {n:6,slug:"@landing-essence-first",goal:"rebuild the arcs landing so payoff and how-to-start land instantly",st:"closed",isGoal:true,sub:1},
+  {n:7,slug:"move-rules-to-global-library",goal:"rule bodies global in <repo>/rules/; on/off via .arcs/config rules=; local override",st:"closed"},
+  {n:9,slug:"add-ideas-candidate-backlog",goal:"candidates backlog — .arcs/candidates/NN-slug.md with from:; arcs candidate/promote",st:"closed"},
+  {n:10,slug:"@immutable-goals-and-chains",goal:"make goal intent immutable — aim changes spawn supersedes-linked arcs; checklist replaces versioning",st:"closed",isGoal:true,sub:3,from:7},
+  {n:11,slug:"fix-doc-drift-and-orphan",goal:"fix doc drift (DEPLOY/examples/template/bin/README) + delete empty untracked 08 ghost",st:"closed"},
+  {n:12,slug:"review-arc-writing-quality",goal:"judge the writing quality of every arc/goal as a unit of the method",st:"closed",from:11},
+  {n:13,slug:"@simple-landing-and-deep-docs",goal:"simple value-first landing; deep technical docs on a separate page; ship 0.2.0",st:"closed",isGoal:true,sub:2},
+  {n:14,slug:"agent-first-quickstart-and-os-setup",goal:"reframe landing + docs to the agent-driven path + real per-OS setup (WSL/Git Bash)",st:"closed"},
+  {n:15,slug:"setup-vercel-git-autodeploy",goal:"wire Vercel push-to-deploy (git connect + root vercel.json → serve docs/)",st:"closed"},
+  {n:16,slug:"landing-benefits-and-docs-mobile-nav",goal:"restore four concrete landing benefits + compact mobile docs nav",st:"closed"},
+  {n:17,slug:"drop-goal-v2-framing",goal:"",st:"closed"},
+  {n:18,slug:"version-aware-update",goal:"version-aware update — nudge on new release, force on breaking",st:"closed"},
+  {n:19,slug:"russian-in-cli-templates",goal:"resolve the 'russian in bin/arcs' flag — verdict + decision",st:"closed",from:18},
+  {n:20,slug:"landing-no-start-no-wow",goal:"landing wow-moment + concrete first move (pain→relief)",st:"closed"},
+  {n:21,slug:"checklist-key-dots-break-matching",goal:"",st:"closed",from:13},
+  {n:22,slug:"cut-release-0.3.1",goal:"",st:"closed"},
+  {n:23,slug:"roast-arcs-method-and-cli",goal:"adversarial roast of the whole method + CLI — surfaced 74 findings + next-arc candidates",st:"closed"},
+  {n:24,slug:"gate-enforcement-is-real",goal:"",st:"closed",from:23},
+  {n:25,slug:"release-culture-and-checks",goal:"",st:"closed",from:23},
+  {n:26,slug:"design-checklist-items-as-arcs",goal:"",st:"closed"},
+  {n:27,slug:"research-as-arc-kind",goal:'settle whether "research" should be a kind of arc — verdict: no, arcs needs no change',st:"closed"},
+  {n:28,slug:"arcs-self-migration-strategy",goal:"decide how arcs evolves its on-disk format without breaking existing projects",st:"closed"},
+  {n:29,slug:"implement-checklist-items-as-arcs",goal:"implement model B — a goal's checklist IS its sub-arcs; drop closes:/## Checklist/key-matching",st:"closed",from:26},
+  {n:30,slug:"harden-slug-and-arg-handling",goal:"",st:"active",from:23},
+  {n:31,slug:"fix-goal-lifecycle-ops",goal:"",st:"active",from:23},
+  {n:32,slug:"@benchmark-pluggable-structures",goal:"build a bench stand measuring arcs vs bare on tokens/time/quality",st:"active",isGoal:true,sub:3},
+];
+
+const byN = Object.fromEntries(ARCS.map(a=>[a.n,a]));
+const idStr = a => (a.st==="closed"?"__":"") + String(a.n).padStart(2,"0") + "-" + a.slug + (a.st==="closed"?"__":"");
+const titleOf = a => a.goal ? a.goal : '<one line — what this arc closes>';
+
+// stats
+S("s-total",ARCS.length);
+S("s-open",ARCS.filter(a=>a.st==="active").length);
+S("s-closed",ARCS.filter(a=>a.st==="closed").length);
+S("s-goal",ARCS.filter(a=>a.isGoal).length);
+function S(id,v){document.getElementById(id).textContent=v}
+
+// ---- board ----
+const board=document.getElementById("board");
+ARCS.forEach(a=>{
+  const row=document.createElement("div");
+  row.className="arc-row"+(a.isGoal?" goal":"")+(a.st==="closed"?" closed":"")+(a.st==="active"?" active":"");
+  const badge = a.isGoal
+    ? `<span class="badge goal">@ goal${a.sub?` ${a.sub}/${a.sub}✓`:""}</span>`
+    : a.st==="active" ? `<span class="badge active">● active</span>`
+    : `<span class="badge closed">done</span>`;
+  row.innerHTML=`
+    <span class="id">${idStr(a)}</span>
+    <span class="title">${a.goal?esc(a.goal):'<span class="placeholder">— no one-liner —</span>'}</span>
+    <span>${badge}</span>`;
+  row.onclick=()=>openDrawer(a);
+  board.appendChild(row);
+});
+
+// ---- lineage graph (simple layered layout by 'from') ----
+(function(){
+  const linked = ARCS.filter(a=>a.from || ARCS.some(b=>b.from===a.n));
+  // group: each parent + its children
+  const parents=[...new Set(linked.filter(a=>a.from).map(a=>a.from))];
+  const colW=210, rowH=58, padX=24, padY=24;
+  let y=padY, positions={}, rows=[];
+  parents.forEach(p=>{
+    const kids=ARCS.filter(a=>a.from===p);
+    positions[p]={x:padX,y};
+    kids.forEach((k,i)=>{ positions[k.n]={x:padX+colW+90, y:y+i*rowH}; });
+    const span=Math.max(1,kids.length);
+    rows.push({p,kids,y,span});
+    y += span*rowH + 18;
+  });
+  const W=padX+colW+90+colW+padX, H=y+padY;
+  const isHub=n=>ARCS.filter(a=>a.from===n).length>=3;
+  let edges="", nodesSvg="";
+  Object.entries(positions).forEach(([n,pos])=>{
+    const a=byN[n]; if(!a)return;
+    const cls="node"+(isHub(+n)?" hub":"")+(a.isGoal?" goal":"")+(a.st==="active"?" active":"");
+    nodesSvg+=`<g class="${cls}" data-n="${n}">
+      <rect x="${pos.x}" y="${pos.y}" width="${colW}" height="40" rx="9"/>
+      <text x="${pos.x+12}" y="${pos.y+24}">${String(a.n).padStart(2,"0")}·${trunc(a.slug,20)}</text>
+    </g>`;
+  });
+  ARCS.forEach(a=>{
+    if(!a.from||!positions[a.from]||!positions[a.n])return;
+    const s=positions[a.from], t=positions[a.n];
+    const x1=s.x+colW,y1=s.y+20,x2=t.x,y2=t.y+20,mx=(x1+x2)/2;
+    edges+=`<path class="edge ${isHub(a.from)?'from-hub':''}" d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2-7},${y2}"/>`;
+  });
+  document.getElementById("graph").innerHTML=`
+    <svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+      <defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+        <path d="M0,0 L6,3 L0,6 Z" fill="var(--line)"/></marker></defs>
+      ${edges}${nodesSvg}
+    </svg>`;
+  document.querySelectorAll(".node").forEach(g=>g.onclick=()=>openDrawer(byN[g.dataset.n]));
+})();
+
+// ---- tabs ----
+document.querySelectorAll("nav.tabs button").forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll("nav.tabs button").forEach(x=>x.setAttribute("aria-selected","false"));
+    b.setAttribute("aria-selected","true");
+    document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+    document.getElementById("view-"+b.dataset.view).classList.add("active");
+  };
+});
+
+// ---- drawer ----
+const drawer=document.getElementById("drawer"), bg=document.getElementById("drawerBg");
+function openDrawer(a){
+  const parent=a.from?byN[a.from]:null;
+  const kids=ARCS.filter(x=>x.from===a.n);
+  document.getElementById("drawerBody").innerHTML=`
+    <div class="d-id">${idStr(a)}</div>
+    <h3>${esc(a.slug.replace(/^@/,""))}${a.isGoal?' <span class="badge goal">@ goal</span>':''}</h3>
+    <div class="row">
+      ${a.st==="active"?'<span class="badge active">● active</span>':'<span class="badge closed">done</span>'}
+      ${a.sub?`<span class="badge goal">${a.sub} sub-arcs</span>`:""}
+    </div>
+    <div class="field"><h4>goal</h4><p>${a.goal?esc(a.goal):"— no one-liner written —"}</p></div>
+    <div class="field"><h4>flow</h4>
+      <div class="flow"><span>input</span><span class="arr">→</span><span>workspace</span><span class="arr">→</span><span>output</span></div>
+    </div>
+    ${parent?`<div class="field"><h4>came from</h4><p class="lineage-link" data-n="${parent.n}">${idStr(parent)}</p></div>`:""}
+    ${kids.length?`<div class="field"><h4>spawned</h4>${kids.map(k=>`<p class="lineage-link" data-n="${k.n}">${idStr(k)}</p>`).join("")}</div>`:""}
+  `;
+  drawer.classList.add("show"); bg.classList.add("show");
+  document.querySelectorAll(".lineage-link").forEach(l=>l.onclick=()=>openDrawer(byN[l.dataset.n]));
+}
+function closeDrawer(){drawer.classList.remove("show");bg.classList.remove("show")}
+document.getElementById("closeX").onclick=closeDrawer;
+bg.onclick=closeDrawer;
+addEventListener("keydown",e=>e.key==="Escape"&&closeDrawer());
+
+function esc(s){return s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]))}
+function trunc(s,n){return s.length>n?s.slice(0,n-1)+"…":s}
+</script>
+</body>
+</html>
