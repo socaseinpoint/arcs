@@ -21,7 +21,7 @@
         <a href="#concepts">concepts</a>
         <a href="#goals">goals v2</a>
         <a href="#commands">commands</a>
-        <a href="#install">install</a>
+        <a href="#setup">setup</a>
       </span>
       <a href="https://github.com/socaseinpoint/arcs" target="_blank" rel="noopener">github ↗</a>
     </nav>
@@ -42,7 +42,7 @@
         <li><a href="#rules">Rules layer</a></li>
         <li><a href="#candidates">Candidates</a></li>
         <li><a href="#commands">Command reference</a></li>
-        <li><a href="#install">Install</a></li>
+        <li><a href="#setup">Setup &amp; install</a></li>
         <li><a href="#example">Worked example</a></li>
       </ol>
     </nav>
@@ -310,7 +310,9 @@
     <!-- COMMAND REFERENCE -->
     <section id="commands" class="docs-section reveal">
       <h2><span class="sec-num mono">07</span> Command reference</h2>
-      <p>The full set, exactly as <code>bin/arcs</code> dispatches them. Field keys
+      <p>The full set, exactly as <code>bin/arcs</code> dispatches them. In normal use the <b>agent</b> runs
+        these — you describe the work in Claude Code and it opens, works, and closes arcs for you;
+        <code>arcs status</code> is the one a human might run to peek at the board. Field keys
         (<code>goal:</code>, <code>status:</code>, <code>closes:</code>, <code>supersedes:</code>) stay
         English so the tooling is language-agnostic.</p>
       <div class="table-wrap">
@@ -337,35 +339,99 @@
       </div>
     </section>
 
-    <!-- INSTALL -->
-    <section id="install" class="docs-section reveal">
-      <h2><span class="sec-num mono">08</span> Install</h2>
+    <!-- SETUP -->
+    <section id="setup" class="docs-section reveal">
+      <h2><span class="sec-num mono">08</span> Setup &amp; install</h2>
+      <p>
+        <b>The usage model first:</b> you install the CLI <em>once</em>; from then on your <b>agent</b> drives
+        it. In day-to-day work you open your project in Claude Code, describe what to build, and the agent
+        runs <code>arcs</code> for you — opening arcs and goals, working <code>input → workspace → output</code>,
+        closing them. A human rarely types <code>arcs</code> at all (<code>arcs status</code> to peek at the
+        board is the one exception).
+      </p>
       <p>
         The tooling lives in the repo — clone it anywhere (<code>~/arcs</code>, <code>~/code/arcs</code>,
         whatever). A project only ever gets a hidden <code>.arcs/</code> dir; the method never clutters your
-        code.
+        code. The CLI is bash, so each OS below is just "get a bash shell, clone, run the installer."
       </p>
 
-      <h3>Quick install (one command)</h3>
+      <h3>macOS / Linux</h3>
+      <p>Native bash — the one-command path. <code>install.sh</code> picks your shell's rc file from
+        <code>$SHELL</code> (<code>~/.zshrc</code> for zsh, <code>~/.bashrc</code> for bash, else
+        <code>~/.profile</code>) and appends a PATH line; if <code>~/.claude/skills</code> exists it symlinks
+        the Claude skill to <code>~/.claude/skills/arcs</code>; and if <code>~/.claude</code> + <code>python3</code>
+        are present it registers the enforcement hooks in <code>~/.claude/settings.json</code> (with a
+        <code>.bak</code> backup, idempotent). Open a new shell afterwards.</p>
       <figure>
         <div class="figcap"><span>recommended</span><span>clone + installer</span></div>
 <pre>git clone https://github.com/socaseinpoint/arcs ~/arcs
-cd ~/arcs &amp;&amp; ./install.sh</pre>
+cd ~/arcs &amp;&amp; ./install.sh
+<span class="c"># open a new shell (or: source your rc), then check:</span>
+<span class="k">arcs help</span></pre>
       </figure>
-      <p>
-        <code>install.sh</code> adds <code>arcs</code> to your PATH (in <code>~/.zshrc</code> /
-        <code>~/.bashrc</code>) and, if <code>~/.claude/skills</code> exists, symlinks the Claude skill. Open
-        a new shell afterwards, then check with <code>arcs help</code>.
-      </p>
-
-      <h3>Manual install</h3>
+      <p>Prefer to wire PATH by hand? Clone wherever you like and point PATH at that clone's
+        <code>bin/</code>:</p>
       <figure>
-        <div class="figcap"><span>if you prefer</span><span>PATH by hand</span></div>
+        <div class="figcap"><span>manual variant</span><span>PATH by hand</span></div>
 <pre>git clone https://github.com/socaseinpoint/arcs &lt;DIR&gt;
-echo 'export PATH="&lt;DIR&gt;/bin:$PATH"' &gt;&gt; ~/.zshrc   <span class="c"># your real &lt;DIR&gt;</span>
+echo 'export PATH="&lt;DIR&gt;/bin:$PATH"' &gt;&gt; ~/.zshrc   <span class="c"># your real &lt;DIR&gt; + rc</span>
 source ~/.zshrc
 ln -s &lt;DIR&gt;/skill ~/.claude/skills/arcs           <span class="c"># optional Claude skill</span></pre>
       </figure>
+
+      <h3>Windows</h3>
+      <p>
+        <code>arcs</code> is a bash CLI, so on Windows you run it inside a bash environment — either
+        <b>WSL</b> (recommended) or <b>Git Bash</b>. Either way the steps are the same shape as macOS/Linux;
+        the difference is <em>where</em> "home" lives, which is where PATH, the skill symlink, and the hooks
+        land. <b>Native PowerShell / cmd is not supported yet</b> — there's no PowerShell port of the CLI.
+      </p>
+      <div class="def-grid">
+        <div class="def">
+          <span class="tag">recommended</span>
+          <h4>WSL (Ubuntu)</h4>
+          <p>
+            A real Linux home, the closest match to how arcs is built.
+          </p>
+        </div>
+        <div class="def">
+          <span class="tag">lighter</span>
+          <h4>Git Bash</h4>
+          <p>
+            Ships with Git for Windows — no Linux subsystem, just a bash shell over your Windows files.
+          </p>
+        </div>
+      </div>
+      <figure>
+        <div class="figcap"><span>option A · WSL</span><span>recommended</span></div>
+<pre><span class="c"># in PowerShell, once — installs WSL + Ubuntu, then reboot if asked:</span>
+wsl --install
+
+<span class="c"># then open the "Ubuntu" shell and work entirely inside it:</span>
+git clone https://github.com/socaseinpoint/arcs ~/arcs
+cd ~/arcs &amp;&amp; ./install.sh
+<span class="k">arcs help</span></pre>
+      </figure>
+      <p class="dim">
+        Inside WSL, "home" is the Linux home (<code>/home/&lt;you&gt;</code>). PATH lands in that home's
+        <code>~/.bashrc</code>, and the skill symlink + hooks land under that home's <code>~/.claude/</code> —
+        so run your <b>WSL</b> Claude Code session from there. Clone the project inside WSL too (or work on a
+        path WSL can reach) so the agent and the CLI share one filesystem view.
+      </p>
+      <figure>
+        <div class="figcap"><span>option B · Git Bash</span><span>no subsystem</span></div>
+<pre><span class="c"># install "Git for Windows" (gives you Git Bash), open Git Bash, then:</span>
+git clone https://github.com/socaseinpoint/arcs ~/arcs
+cd ~/arcs &amp;&amp; ./install.sh
+<span class="k">arcs help</span></pre>
+      </figure>
+      <p class="dim">
+        Git Bash's <code>$SHELL</code> is bash, so PATH appends to <code>~/.bashrc</code> in your Git Bash
+        home (<code>C:\Users\&lt;you&gt;</code>). The skill symlink + hooks register under <code>~/.claude/</code>
+        there, provided <code>python3</code> is on PATH for the hook step — without it the installer skips
+        hooks and prints the manual line to add them. If <code>arcs help</code> doesn't resolve in a fresh
+        Git Bash, re-open the shell (or <code>source ~/.bashrc</code>).
+      </p>
 
       <h3>Enforcement (recommended)</h3>
       <p>Three layers, weakest to strongest — <code>install.sh</code> registers the hooks automatically (in
@@ -376,26 +442,30 @@ ln -s &lt;DIR&gt;/skill ~/.claude/skills/arcs           <span class="c"># option
         <li><b><code>arcs-gate</code></b> (PreToolUse <code>Edit|Write|MultiEdit</code>) — a <em>hard</em> block: refuses edits to project files while <code>.arcs/</code> has no active arc. Edits inside <code>.arcs/</code> are always allowed; projects without <code>.arcs/</code> are never affected.</li>
       </ol>
 
-      <h3>Use it in a project</h3>
+      <h3>Opting a project in</h3>
+      <p>One command, run <em>once</em> per project — and in practice the <b>agent</b> runs it the first time
+        you point it at fresh work; you don't have to. After that, the agent opens arcs and goals on its own:</p>
       <figure>
-        <div class="figcap"><span>$ from the project root</span><span>opt in + work</span></div>
+        <div class="figcap"><span>$ from the project root</span><span>what the agent runs</span></div>
 <pre>cd my-project
 <span class="k">arcs init</span>                         <span class="c"># creates .arcs/ + asks the arc language</span>
 <span class="k">arcs new-goal</span> payments            <span class="c"># multi-arc work → .arcs/arcs/NN-@payments/</span>
 <span class="k">arcs new-arc</span> -g payments stripe   <span class="c"># an arc inside the goal</span>
 <span class="k">arcs new-arc</span> spike-redis          <span class="c"># a standalone arc</span>
-<span class="k">arcs status</span>                       <span class="c"># the board</span></pre>
+<span class="k">arcs status</span>                       <span class="c"># the board — the one you might run yourself</span></pre>
       </figure>
 
       <h3>Updating</h3>
-      <p>One command, from anywhere — the CLI knows where it was cloned. Then restart your Claude Code
+      <p>One command, from anywhere — the CLI knows where it was cloned. It git-pulls the method and re-runs
+        the installer, so PATH, skill, and hooks are re-wired idempotently. Then restart your Claude Code
         session so it reloads the skill + hooks. Your projects' <code>.arcs/</code> data is untouched.</p>
       <figure>
         <div class="figcap"><span>$ arcs update</span><span>idempotent</span></div>
 <pre><span class="k">arcs update</span>          <span class="c"># git pull + re-wire PATH, skill, and hooks</span></pre>
       </figure>
       <p class="dim">
-        <b>Requirements:</b> bash + standard coreutils (grep, sed). macOS / Linux. No build step.
+        <b>Requirements:</b> bash + standard coreutils (grep, sed); <code>python3</code> for hook registration.
+        macOS / Linux natively; Windows via WSL or Git Bash. No build step.
         <b>.gitignore:</b> <code>.arcs/</code> is usually <b>committed</b> — it's the memory of the work. If
         you'd rather not, add <code>.arcs/</code> to the project's <code>.gitignore</code>.
       </p>

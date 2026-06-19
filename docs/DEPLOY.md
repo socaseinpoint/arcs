@@ -72,7 +72,14 @@ Then restart your Claude Code session so it picks up the new skill + hook. Your 
 data is untouched.
 
 ## Requirements
-bash + standard coreutils (grep, sed). macOS / Linux. No build step.
+bash + standard coreutils (grep, sed); `python3` for hook registration. No build step.
+- **macOS / Linux** — native bash.
+- **Windows** — the CLI is bash, so run it under **WSL** (recommended) or **Git Bash**. PATH, the Claude
+  skill symlink, and the hooks land in that environment's home (the WSL Linux home, or the Git Bash home).
+  Native PowerShell isn't supported yet.
+
+The CLI is **agent-driven**: you install it once, then your agent runs `arcs` for you while working in
+Claude Code (a human rarely types it — `arcs status` to peek at the board aside).
 
 ## Project .gitignore
 `.arcs/` is usually **committed** (it's the memory of the work). If you don't want that, add `.arcs/`

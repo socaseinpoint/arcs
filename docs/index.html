@@ -96,32 +96,39 @@
     </div>
   </section>
 
-  <!-- 20-SECOND START -->
+  <!-- START — AGENT-FIRST -->
   <section id="start">
     <div class="wrap block">
       <div class="head reveal">
         <div class="num">§ 03</div>
         <div>
-          <h2>A 20-second start.</h2>
-          <div class="sub">Clone, run one installer, then just tell your agent to start. You rarely touch the CLI yourself.</div>
+          <h2>Install once. Then just talk to your agent.</h2>
+          <div class="sub">You don't run <code>arcs</code> by hand — your agent does. You install the CLI one time, then work through Claude Code as usual.</div>
         </div>
       </div>
 
       <div class="body-grid reveal">
         <div></div>
         <div>
-<pre><span class="c"># install once (clone anywhere, then run the installer)</span>
-git clone https://github.com/socaseinpoint/arcs ~/arcs &amp;&amp; cd ~/arcs &amp;&amp; ./install.sh
-
-<span class="c"># then, in any project — tell your agent to start.</span>
-<span class="c"># it runs arcs init, opens the first arc, and works inside it:</span>
-<span class="k">arcs init</span>                <span class="c"># creates .arcs/ + picks the arc language</span>
-<span class="k">arcs status</span>              <span class="c"># the board — where everything stands</span></pre>
+<pre><span class="c"># 1 · install once — clone anywhere, run the installer</span>
+git clone https://github.com/socaseinpoint/arcs ~/arcs &amp;&amp; cd ~/arcs &amp;&amp; ./install.sh</pre>
           <p class="prose dim">
-            That's the whole happy path. <code>install.sh</code> wires up your PATH, the Claude skill, and
-            the enforcement hooks; afterwards the agent opens an arc before working and keeps
-            <code>output/</code> clean on its own. Full install variants — manual setup, hooks, updating —
-            live in the <a class="inline-link" href="docs.html#install">docs</a>.
+            One command. It adds <code>arcs</code> to your PATH, links the Claude skill, and registers the
+            enforcement hooks — so every session in an opted-in project nudges (and gates) the agent toward
+            arcs. Open a new shell afterwards. <a class="inline-link" href="docs.html#setup">Setup for your OS →</a>
+          </p>
+
+          <p class="prose"><b>2 · then just tell your agent what to build.</b> Open your project in Claude
+            Code and describe the work. The agent drives <code>arcs</code> for you — it opens an arc or goal,
+            works <code>input → workspace → output</code>, and closes it when the result is self-contained.
+            You never type the commands; the structure just appears on disk as the agent goes.</p>
+
+          <p class="prose dim">
+            <b>3 · peek if you want.</b> The one line a human might actually run —
+            <code>arcs status</code> — prints the board the agent is keeping: what's open, what's done, where
+            the work stands. Everything else (<code class="k">new-goal</code>, <code class="k">new-arc</code>,
+            <code class="k">close</code>…) is what the <em>agent</em> runs, not a how-to for you. The full
+            command set and the per-OS setup live in the <a class="inline-link" href="docs.html#setup">docs</a>.
           </p>
         </div>
       </div>
