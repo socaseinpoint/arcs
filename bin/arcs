@@ -397,6 +397,7 @@ cmd_help() { sed -n '2,4p' "$0" | sed 's/^# \{0,1\}//'; cat <<EOF
   arcs candidate list               list candidates (also shown by arcs status)
   arcs promote [-g <goal>] <slug>   turn a candidate into a real arc (moves it into the arc's input/)
   arcs status                       print the board
+  arcs dashboard [root...]          build + open a read-only portfolio viewer over every .arcs/ found
   arcs version                      print the installed arcs version
   arcs check-update                 throttled remote check; nudge if a newer release exists
   arcs update                       git pull the method + re-wire skill/hooks
@@ -595,6 +596,42 @@ cmd_supersede() {   # close <old> (no output guard) + create <new> in the same s
   echo "arcs: superseded $old → $(basename "$dir") (closed $old, supersedes: $old, seeded input/from-$old.md)"
 }
 
+# --- dashboard -------------------------------------------------------------
+# Read-only portfolio viewer (presentation layer, separate from arcs core). Scans every
+# .arcs/ under the given roots, injects the data into the template, writes the page to the
+# CURRENT project's .arcs/.cache/ (cache, not arc data), and opens it. Never writes any .arcs/arcs/.
+cmd_dashboard() {
+  local repo; repo="$(repo_dir)"
+  local scan="$repo/dashboard/scan.sh" tpl="$repo/dashboard/template.html"
+  [ -f "$scan" ] || die "scanner missing: $scan"
+  [ -f "$tpl" ]  || die "template missing: $tpl"
+  # roots: explicit args, else the whole machine ($HOME) — the dashboard is portfolio-wide,
+  # so it scans every .arcs/ project on disk and runs from anywhere (no .arcs/ in cwd needed).
+  local roots=()
+  if [ $# -gt 0 ]; then roots=("$@"); else roots=("$HOME"); fi
+  # scan -> data block (a single failure inside must not be masked: capture, then check)
+  local data; data="$(bash "$scan" "${roots[@]}")" || die "scan failed"
+  [ -n "$data" ] || die "scan produced no data (no .arcs/ projects under: ${roots[*]})"
+  # cache to a stable per-user location so it works regardless of cwd
+  local cache="${XDG_CACHE_HOME:-$HOME/.cache}/arcs"
+  mkdir -p "$cache"
+  local out="$cache/dashboard.html"
+  # inject: split the template on the placeholder line, write data in between.
+  # awk reading a temp file (not sed s///) — the data carries every special char.
+  local dtmp; dtmp="$(mktemp)"; printf '%s\n' "$data" > "$dtmp"
+  awk -v dataf="$dtmp" '
+    index($0,"/*__ARCS_DATA__*/") { while ((getline line < dataf) > 0) print line; next }
+    { print }
+  ' "$tpl" > "$out" || { rm -f "$dtmp"; die "failed to write $out"; }
+  rm -f "$dtmp"
+  local abs; abs="$(cd "$(dirname "$out")" && pwd)/$(basename "$out")"
+  # open in the default browser; fall back to just printing the path
+  local opener=""
+  for o in open xdg-open start; do command -v "$o" >/dev/null 2>&1 && { opener="$o"; break; }; done
+  [ -n "$opener" ] && "$opener" "$abs" >/dev/null 2>&1 || true
+  echo "arcs: dashboard → $abs"
+}
+
 # --- dispatch --------------------------------------------------------------
 sub="${1:-help}"; shift || true
 case "$sub" in
@@ -609,6 +646,7 @@ case "$sub" in
   candidate) cmd_candidate "$@" ;;
   promote)   cmd_promote "$@" ;;
   status)    cmd_status "$@" ;;
+  dashboard) cmd_dashboard "$@" ;;
   version|--version|-V) cmd_version ;;
   check-update) cmd_check_update "$@" ;;
   update)    cmd_update "$@" ;;

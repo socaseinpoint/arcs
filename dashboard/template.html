@@ -1,0 +1,712 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<title>arcs · dashboard v2 · portfolio</title>
+<style>
+  :root{
+    --bg:oklch(16% 0.012 250);--bg-raise:oklch(20% 0.014 250);--bg-card:oklch(23% 0.016 250);
+    --line:oklch(32% 0.018 250);--line-soft:oklch(27% 0.014 250);
+    --ink:oklch(94% 0.01 250);--ink-dim:oklch(70% 0.012 250);--ink-faint:oklch(54% 0.012 250);
+    --accent:oklch(80% 0.16 78);--accent-2:oklch(72% 0.15 200);
+    --open:oklch(82% 0.17 145);--closed:oklch(58% 0.01 250);--goal:oklch(78% 0.17 320);
+    --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,monospace;--sans:system-ui,-apple-system,"Segoe UI",sans-serif;
+    --c-landing:oklch(78% 0.15 60);--c-method:oklch(74% 0.14 290);--c-cli:oklch(76% 0.14 200);
+    --c-release:oklch(80% 0.15 145);--c-quality:oklch(72% 0.16 20);--c-infra:oklch(70% 0.12 250);--c-bench:oklch(82% 0.15 95);
+  }
+  *{box-sizing:border-box}html,body{margin:0;height:100%}
+  body{background:radial-gradient(1100px 560px at 85% -10%,oklch(24% 0.03 78 /.22),transparent 60%),
+    radial-gradient(900px 480px at -10% 110%,oklch(24% 0.03 200 /.18),transparent 55%),var(--bg);
+    color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;line-height:1.45}
+  .app{display:grid;grid-template-columns:256px 1fr;min-height:100vh}
+
+  /* RAIL */
+  aside.rail{border-right:1px solid var(--line-soft);padding:24px 18px;position:sticky;top:0;height:100vh;overflow-y:auto}
+  .brand{display:flex;align-items:baseline;gap:8px;margin-bottom:18px}
+  .brand h1{font-family:var(--mono);font-size:22px;margin:0;font-weight:600;letter-spacing:-.02em}
+  .brand h1 .u{color:var(--accent)}.brand .v{font-family:var(--mono);font-size:10px;color:var(--ink-faint)}
+  .rail h5{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint);margin:20px 0 8px}
+  .scope-btn{display:flex;align-items:center;gap:9px;width:100%;text-align:left;appearance:none;background:none;border:1px solid transparent;
+    color:var(--ink-dim);font-family:var(--mono);font-size:12.5px;padding:8px 10px;border-radius:9px;cursor:pointer;transition:.13s;margin-bottom:2px}
+  .scope-btn:hover{background:var(--bg-raise)}
+  .scope-btn[aria-selected=true]{background:var(--bg-card);border-color:var(--line);color:var(--ink)}
+  .scope-btn .pdot{width:8px;height:8px;border-radius:50%;flex:none}
+  .scope-btn .pn{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .scope-btn .pc{font-size:10px;color:var(--ink-faint)}
+  .scope-btn.all{border-color:var(--line-soft);margin-bottom:8px}
+  .scope-btn.all .pdot{background:linear-gradient(135deg,var(--accent),var(--goal))}
+  .vbtn{display:flex;align-items:center;gap:9px;width:100%;text-align:left;appearance:none;background:none;border:1px solid transparent;
+    color:var(--ink-dim);font-family:var(--mono);font-size:13px;padding:8px 11px;border-radius:9px;cursor:pointer;transition:.13s}
+  .vbtn:hover{background:var(--bg-raise)}.vbtn[aria-selected=true]{background:var(--bg-card);border-color:var(--line);color:var(--ink)}
+  .vbtn .ic{width:16px;text-align:center;color:var(--accent)}
+  .ctl{margin-bottom:12px}.ctl label{display:block;font-family:var(--mono);font-size:11px;color:var(--ink-faint);margin-bottom:5px}
+  .ctl select{width:100%;background:var(--bg-card);color:var(--ink);border:1px solid var(--line);border-radius:8px;font-family:var(--mono);font-size:12px;padding:7px 9px}
+  .toggle{display:flex;align-items:center;justify-content:space-between;font-family:var(--mono);font-size:12px;color:var(--ink-dim);padding:6px 0;cursor:pointer}
+  .sw{width:34px;height:19px;border-radius:99px;background:var(--line);position:relative;transition:.16s;flex:none}
+  .sw::after{content:"";position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;background:var(--ink-dim);transition:.16s}
+  .toggle.on .sw{background:oklch(82% 0.17 145 /.5)}.toggle.on .sw::after{left:17px;background:var(--open)}
+
+  /* MAIN */
+  main{padding:28px 32px 80px;overflow-x:auto}
+  .crumb{font-family:var(--mono);font-size:12px;color:var(--ink-faint);margin-bottom:6px}
+  .crumb a{color:var(--accent-2);cursor:pointer}
+  .view-head{display:flex;align-items:baseline;gap:12px;margin-bottom:2px}
+  .view-head h2{font-family:var(--mono);font-size:20px;margin:0;font-weight:600;letter-spacing:-.01em}
+  .view-head p{margin:0;color:var(--ink-faint);font-size:13px}
+  .view-body{margin-top:22px}
+
+  /* pulse */
+  .pulse{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:26px}
+  .ptile{background:var(--bg-raise);border:1px solid var(--line-soft);border-radius:13px;padding:15px 16px}
+  .ptile b{display:block;font-family:var(--mono);font-size:26px;font-weight:600;line-height:1;letter-spacing:-.02em}
+  .ptile span{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--ink-faint);margin-top:7px;display:block}
+  .ptile.active b{color:var(--open)}.ptile.goal b{color:var(--goal)}.ptile.proj b{color:var(--accent)}
+
+  /* NOW */
+  .now{margin-bottom:30px}
+  .now h3{font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--open);margin:0 0 12px;display:flex;align-items:center;gap:8px}
+  .now h3::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--open);box-shadow:0 0 0 4px oklch(82% 0.17 145 /.15)}
+  .now-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:13px}
+  .now-card{background:linear-gradient(160deg,oklch(82% 0.17 145 /.07),transparent 70%),var(--bg-raise);
+    border:1px solid oklch(82% 0.17 145 /.28);border-radius:13px;padding:15px;cursor:pointer;transition:.14s}
+  .now-card:hover{border-color:var(--open);transform:translateY(-2px)}
+  .now-card .nc-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  .now-card .nc-id{font-family:var(--mono);font-size:12px;color:var(--ink-dim)}
+  .now-card.goal .nc-id{color:var(--goal)}
+  .ptag{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10px;color:var(--ink-faint);background:var(--bg-card);border:1px solid var(--line);border-radius:99px;padding:2px 8px}
+  .ptag .pdot{width:6px;height:6px;border-radius:50%}
+  .now-card .nc-goal{font-size:14px;color:var(--ink);margin:2px 0 12px;line-height:1.4;min-height:38px}
+  .now-card .nc-foot{display:flex;gap:8px;flex-wrap:wrap;font-family:var(--mono);font-size:10px;color:var(--ink-faint)}
+  .now-card .nc-foot .tg{background:var(--bg-card);border:1px solid var(--line);border-radius:6px;padding:2px 7px}
+
+  /* recent work cards */
+  .now h3.recent-h{color:var(--accent)}
+  .now h3.recent-h::before{background:var(--accent);box-shadow:0 0 0 4px oklch(80% 0.16 78 /.15)}
+  .rc{background:var(--bg-raise);border:1px solid var(--line-soft);border-radius:13px;padding:14px 15px;cursor:pointer;transition:.14s}
+  .rc:hover{border-color:var(--line);transform:translateY(-2px)}
+  .rc.active{border-color:oklch(82% 0.17 145 /.3);background:linear-gradient(160deg,oklch(82% 0.17 145 /.05),transparent 70%),var(--bg-raise)}
+  .rc-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:6px}
+  .rc-title{font-size:14px;color:var(--ink);font-weight:500;line-height:1.35;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .age{font-family:var(--mono);font-size:10px;color:var(--ink-faint);white-space:nowrap;flex:none}
+  .rc-desc{font-size:12px;color:var(--ink-dim);line-height:1.45;margin-bottom:10px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .rc-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;font-family:var(--mono);font-size:10px}
+  .rc-st{padding:2px 7px;border-radius:99px}
+  .rc-st.active{background:oklch(82% 0.17 145 /.16);color:var(--open)}
+  .rc-st.closed{background:var(--bg-card);color:var(--ink-faint)}
+  /* projects grid */
+  .proj-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:16px}
+  .proj-card{background:var(--bg-raise);border:1px solid var(--line-soft);border-radius:15px;padding:18px;cursor:pointer;transition:.15s;border-top:3px solid var(--pc)}
+  .proj-card:hover{border-color:var(--pc);transform:translateY(-3px);box-shadow:0 12px 30px oklch(10% 0.02 250 /.4)}
+  .proj-card .ph{display:flex;align-items:center;gap:9px;margin-bottom:3px}
+  .proj-card h3{font-family:var(--mono);font-size:15px;margin:0;font-weight:600}
+  .proj-card .ppath{font-family:var(--mono);font-size:10px;color:var(--ink-faint);margin-bottom:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .proj-card .pstat{display:flex;gap:16px;margin-bottom:14px}
+  .proj-card .pstat div{font-family:var(--mono)}
+  .proj-card .pstat b{font-size:19px;font-weight:600;display:block;line-height:1}
+  .proj-card .pstat .active b{color:var(--open)}
+  .proj-card .pstat span{font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-faint)}
+  .proj-card .pbar{height:5px;background:var(--bg-card);border-radius:99px;overflow:hidden;margin-bottom:12px}
+  .proj-card .pbar i{display:block;height:100%;background:var(--pc);border-radius:99px}
+  .proj-card .pfocus{font-size:12px;color:var(--ink-dim);line-height:1.4}
+  .proj-card .pfocus .lbl{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);display:block;margin-bottom:3px}
+  .proj-card .idle{color:var(--ink-faint);font-style:italic}
+
+  /* rows */
+  .group-label{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);margin:22px 0 8px;display:flex;align-items:center;gap:8px}
+  .group-label .dot{width:8px;height:8px;border-radius:2px}
+  .arc-row{display:grid;grid-template-columns:26px 1fr auto auto;gap:12px;align-items:center;padding:7px 12px;border:1px solid transparent;border-radius:9px;cursor:pointer;transition:.13s;border-left:3px solid transparent}
+  .arc-row:hover{background:var(--bg-raise);border-color:var(--line-soft)}
+  .arc-row.closed{opacity:.55}.arc-row.closed:hover{opacity:.9}
+  .arc-row.active{background:oklch(82% 0.17 145 /.07);opacity:1}
+  .arc-row .id{font-family:var(--mono);font-size:11px;color:var(--ink-faint);text-align:right}
+  /* colour only OPEN goals / active arcs — a closed goal reads as plain "done", not highlighted */
+  .arc-row.goal:not(.closed) .id{color:var(--goal)}.arc-row.active .id{color:var(--open)}
+  .arc-row .title{font-size:13.5px;color:var(--ink-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .arc-row.active .title,.arc-row.goal:not(.closed) .title{color:var(--ink)}
+  .arc-meta{display:flex;gap:9px;align-items:center;font-family:var(--mono);font-size:10.5px;color:var(--ink-faint)}
+  .arc-meta .g.spawn{color:var(--accent)}.arc-meta .g.from{color:var(--accent-2)}
+  .arc-meta .odot{width:7px;height:7px;border-radius:50%;display:inline-block}
+  .badge{font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:99px;white-space:nowrap}
+  .badge.active{background:oklch(82% 0.17 145 /.16);color:var(--open)}
+  .badge.closed{background:oklch(58% 0.01 250 /.14);color:var(--closed)}
+  .badge.goal{background:oklch(78% 0.17 320 /.16);color:var(--goal)}
+  .badge.soft{background:var(--bg-card);border:1px solid var(--line);color:var(--ink-faint)}
+  .density-compact .arc-row{padding:5px 14px}.density-compact .pulse,.density-compact .now{display:none}
+
+  /* lineage */
+  .graph-shell{background:var(--bg-raise);border:1px solid var(--line-soft);border-radius:14px;padding:8px;overflow:auto}
+  svg{display:block;width:100%;height:auto;min-width:720px}
+  .node rect{fill:var(--bg-card);transition:.15s}.node:hover{cursor:pointer}.node:hover rect{stroke:var(--accent)!important;fill:var(--bg-raise)}
+  .node .nl1{font-family:var(--mono);font-size:11.5px;fill:var(--ink)}.node .nl2{font-family:var(--sans);font-size:10px;fill:var(--ink-faint)}
+  .node .hublabel{font-family:var(--mono);font-size:9px;fill:var(--accent);letter-spacing:.08em}
+  .edge{stroke:var(--line);stroke-width:1.4;fill:none;marker-end:url(#arrow)}.edge.from-hub{stroke:var(--accent);opacity:.6}
+  .lin-summary{display:flex;gap:18px;flex-wrap:wrap;font-family:var(--mono);font-size:11px;color:var(--ink-faint);margin-bottom:14px}
+  .lin-summary b{color:var(--ink)}
+  .lin-legend{display:flex;gap:16px;flex-wrap:wrap;font-family:var(--mono);font-size:11px;color:var(--ink-faint);margin-top:14px}
+  .lin-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:middle}
+  .empty{color:var(--ink-faint);font-family:var(--mono);font-size:13px;padding:40px;text-align:center;border:1px dashed var(--line);border-radius:12px}
+
+  /* timeline */
+  .tl{position:relative;margin-left:8px;padding-left:26px;border-left:2px solid var(--line-soft)}
+  .tl-rel{display:flex;align-items:center;gap:10px;margin:24px 0 10px;position:relative}
+  .tl-rel::before{content:"";position:absolute;left:-33px;width:13px;height:13px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px var(--bg)}
+  .tl-rel b{font-family:var(--mono);font-size:14px;color:var(--accent)}.tl-rel span{font-size:12px;color:var(--ink-faint)}
+  .tl-item{position:relative;padding:5px 0 5px 4px}
+  .tl-item::before{content:"";position:absolute;left:-31px;top:12px;width:7px;height:7px;border-radius:50%;background:var(--line)}
+  .tl-item.active::before{background:var(--open)}.tl-item.goal::before{background:var(--goal)}
+  .tl-item .id{font-family:var(--mono);font-size:12px;color:var(--ink-dim);cursor:pointer}.tl-item .t{font-size:13px;color:var(--ink-dim)}
+
+  /* map */
+  .map{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
+  .cluster{background:var(--bg-raise);border:1px solid var(--line-soft);border-radius:14px;padding:16px;border-top:3px solid var(--cc)}
+  .cluster h3{font-family:var(--mono);font-size:13px;margin:0 0 4px;color:var(--cc)}
+  .cluster .cnt{font-family:var(--mono);font-size:11px;color:var(--ink-faint);margin-bottom:12px}
+  .chip{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:11px;color:var(--ink-dim);background:var(--bg-card);border:1px solid var(--line);border-radius:7px;padding:4px 8px;margin:0 5px 6px 0;cursor:pointer;transition:.12s}
+  .chip:hover{border-color:var(--cc);color:var(--ink)}.chip .d{width:6px;height:6px;border-radius:50%}
+
+  /* drawer */
+  .drawer-bg{position:fixed;inset:0;background:oklch(10% 0.01 250 /.55);opacity:0;pointer-events:none;transition:.2s;z-index:5}
+  .drawer-bg.show{opacity:1;pointer-events:auto}
+  .drawer{position:fixed;top:0;right:0;height:100%;width:min(440px,92vw);z-index:6;background:var(--bg-raise);border-left:1px solid var(--line);
+    transform:translateX(100%);transition:transform .26s cubic-bezier(.16,1,.3,1);padding:28px 26px;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain}
+  .drawer.show{transform:none}
+  .drawer .d-id{font-family:var(--mono);font-size:12px;color:var(--ink-faint);word-break:break-word}
+  .drawer h3{font-family:var(--mono);font-size:17px;margin:6px 0 12px}
+  .d-meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px}
+  .field{margin-bottom:18px}.field h4{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);margin:0 0 6px}
+  .field p{margin:0;font-size:13.5px;color:var(--ink-dim)}.field p.lead{font-size:15px;color:var(--ink);line-height:1.5}
+  .dim{color:var(--ink-faint)!important;font-size:12.5px}.mono-sm{font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);word-break:break-all}
+  .field p.lead{overflow-wrap:anywhere}
+  .prog{height:6px;background:var(--bg-card);border-radius:99px;overflow:hidden;margin-bottom:6px}.prog-bar{height:100%;background:var(--goal);border-radius:99px}
+  .stage{margin:6px 0 22px;border-left:2px solid var(--line-soft)}
+  .stage-step{display:flex;gap:12px;padding:10px 0 10px 16px;position:relative}
+  .stage-step .dot{position:absolute;left:-7px;top:14px;width:11px;height:11px;border-radius:50%;background:var(--bg);border:2px solid var(--line);flex:none}
+  .stage-step.has .dot{border-color:var(--accent);background:var(--accent)}
+  .stage-step b{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-dim);display:block;margin-bottom:3px}
+  .stage-step.has b{color:var(--ink)}.stage-step p{margin:0;font-size:13px;color:var(--ink-dim)}.stage-step:not(.has) p{color:var(--ink-faint);font-style:italic}
+  .ln-row{display:flex;align-items:center;gap:9px;padding:4px 0}
+  .ln-tag{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);background:var(--bg-card);border:1px solid var(--line);border-radius:5px;padding:2px 6px;flex:none;width:62px;text-align:center}
+  .lineage-link{font-family:var(--mono);font-size:12px;color:var(--accent-2);cursor:pointer}
+  .close-x{position:absolute;top:16px;right:18px;background:none;border:0;color:var(--ink-faint);font-size:22px;cursor:pointer}
+  .foot{margin-top:40px;font-family:var(--mono);font-size:11px;color:var(--ink-faint);text-align:center}
+  /* digest — arc-event feed */
+  .dg-narr{font-size:15px;line-height:1.6;color:var(--ink-dim);background:linear-gradient(160deg,oklch(80% 0.16 78 /.06),transparent 60%),var(--bg-raise);
+    border:1px solid var(--line-soft);border-left:3px solid var(--accent);border-radius:12px;padding:16px 18px;margin-bottom:24px}
+  .dg-narr b{color:var(--ink);font-weight:600}
+  .dg-day{margin-bottom:18px}
+  .dg-dayh{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-dim);margin:0 0 8px;padding-bottom:6px;border-bottom:1px solid var(--line-soft)}
+  .dg-dayh span{color:var(--ink-faint)}
+  .ev{display:grid;grid-template-columns:22px 1fr auto;gap:11px;align-items:start;padding:9px 11px;border:1px solid transparent;border-radius:9px;cursor:pointer;transition:.12s}
+  .ev:hover{background:var(--bg-raise);border-color:var(--line-soft)}
+  .ev-k{font-family:var(--mono);font-weight:700;text-align:center;font-size:13px;line-height:1.5}
+  .ev-k.closed{color:var(--accent-2)}.ev-k.opened{color:var(--goal)}
+  .ev-main{min-width:0}
+  .ev-t{font-size:13.5px;color:var(--ink);line-height:1.4;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .ev-verb{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;padding:1px 6px;border-radius:5px}
+  .ev-verb.closed{background:oklch(70% 0.13 200 /.16);color:var(--accent-2)}
+  .ev-verb.opened{background:oklch(78% 0.17 320 /.16);color:var(--goal)}
+  .ev-d{font-size:12px;color:var(--ink-dim);line-height:1.45;margin-top:3px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .cand-list{margin-bottom:8px}
+  .cand{display:grid;grid-template-columns:20px 1fr auto;gap:11px;align-items:center;padding:9px 11px;border:1px solid var(--line-soft);border-radius:9px;margin-bottom:6px;cursor:pointer;transition:.12s;
+    background:linear-gradient(160deg,oklch(80% 0.16 78 /.04),transparent 70%),var(--bg-raise)}
+  .cand:hover{border-color:var(--accent)}
+  .cand-k{color:var(--accent);text-align:center}
+  .cand-main{min-width:0}.cand-t{font-size:13.5px;color:var(--ink);font-weight:500}
+  .cand-d{font-size:12px;color:var(--ink-dim);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .show-more{appearance:none;width:100%;background:var(--bg-card);border:1px solid var(--line);color:var(--ink-dim);
+    font-family:var(--mono);font-size:12px;padding:10px;border-radius:9px;cursor:pointer;transition:.13s;margin-top:6px}
+  .show-more:hover{border-color:var(--accent);color:var(--accent)}
+  /* drawer content (arc.md + output/input files) */
+  .doc-tabs{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+  .doc-tab{appearance:none;background:var(--bg-card);border:1px solid var(--line);color:var(--ink-dim);
+    font-family:var(--mono);font-size:11px;padding:5px 10px;border-radius:7px;cursor:pointer;transition:.12s}
+  .doc-tab:hover{border-color:var(--line)}
+  .doc-tab.on{background:oklch(80% 0.16 78 /.16);border-color:var(--accent);color:var(--accent)}
+  .doc-pane{background:var(--bg-card);border:1px solid var(--line-soft);border-radius:10px;padding:14px 16px;
+    max-height:46vh;overflow-y:auto;overflow-x:hidden;font-size:13px;line-height:1.55;color:var(--ink-dim);overscroll-behavior:contain}
+  .doc-pane pre{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;font-family:var(--mono);font-size:12px;color:var(--ink-dim);max-width:100%}
+  .doc-pane .md-h{color:var(--ink);font-weight:600;font-family:var(--mono);font-size:12.5px;display:block;margin:12px 0 4px}
+  .doc-pane .md-h:first-child{margin-top:0}
+  .doc-pane b{color:var(--ink)}
+  .doc-empty{color:var(--ink-faint);font-family:var(--mono);font-size:12px;padding:18px;text-align:center}
+  .copy-btn{appearance:none;background:var(--bg-card);border:1px solid var(--line);color:var(--ink-dim);
+    font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:6px;cursor:pointer;margin-left:8px;transition:.12s}
+  .copy-btn:hover{border-color:var(--accent);color:var(--accent)}
+  .path-row{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+  body.modal-open{overflow:hidden}
+
+  /* mobile topbar + scrim (hidden on desktop) */
+  .topbar{display:none}
+  .nav-scrim{position:fixed;inset:0;background:oklch(10% 0.01 250 /.55);opacity:0;pointer-events:none;transition:.2s;z-index:6}
+
+  /* ---------- MOBILE ---------- */
+  @media (max-width:760px){
+    .app{grid-template-columns:1fr}
+    /* topbar */
+    .topbar{display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:5;
+      background:oklch(14% 0.012 250 /.92);backdrop-filter:blur(8px);
+      border-bottom:1px solid var(--line-soft);padding:10px 14px}
+    .topbar .burger{appearance:none;background:var(--bg-card);border:1px solid var(--line);border-radius:9px;
+      color:var(--ink);font-size:17px;line-height:1;width:38px;height:38px;cursor:pointer;flex:none}
+    .topbar .tb-brand{font-family:var(--mono);font-size:16px;font-weight:600;letter-spacing:-.02em}
+    .topbar .tb-brand .u{color:var(--accent)}
+    .topbar .tb-scope{font-family:var(--mono);font-size:11px;color:var(--ink-faint);margin-left:auto;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:45%}
+    /* rail becomes an off-canvas drawer */
+    aside.rail{position:fixed;top:0;left:0;z-index:7;width:min(290px,86vw);height:100%;
+      transform:translateX(-100%);transition:transform .26s cubic-bezier(.16,1,.3,1);
+      background:var(--bg-raise);box-shadow:0 0 40px oklch(8% 0.02 250 /.6)}
+    body.nav-open aside.rail{transform:none}
+    body.nav-open .nav-scrim{opacity:1;pointer-events:auto}
+    /* main: tighter padding, no extra top (topbar handles it) */
+    main{padding:18px 14px 64px;overflow-x:hidden}
+    .view-head{flex-wrap:wrap;gap:4px 12px}
+    .view-head h2{font-size:18px}
+    .pulse{grid-template-columns:repeat(auto-fit,minmax(94px,1fr));gap:9px;margin-bottom:20px}
+    .ptile{padding:12px 13px}.ptile b{font-size:22px}
+    .now-grid{grid-template-columns:1fr}
+    .proj-grid{grid-template-columns:1fr;gap:13px}
+    .dg-grid{grid-template-columns:1fr}
+    .map{grid-template-columns:1fr}
+    .dg-narr{font-size:14px;padding:14px 16px}
+    /* arc rows: drop the secondary meta column, keep id · title · badge */
+    .arc-row{grid-template-columns:auto 1fr auto;gap:10px;padding:10px 11px}
+    .arc-meta{display:none}
+    .arc-row .id{font-size:11.5px}.arc-row .title{font-size:13px}
+    /* arc modal: full-screen, dedicated mobile detail view */
+    .drawer{width:100vw;border-left:0;padding:0;transform:translateY(100%);transition:transform .28s cubic-bezier(.16,1,.3,1)}
+    .drawer.show{transform:none}
+    /* sticky header so close is always reachable; content scrolls under it */
+    #drawerBody{padding:64px 18px 40px}
+    .close-x{position:fixed;top:0;left:0;right:0;height:52px;width:auto;display:flex;align-items:center;justify-content:flex-end;
+      padding:0 18px;background:oklch(15% 0.012 250 /.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--line-soft);
+      font-size:26px;color:var(--ink);z-index:2}
+    .doc-pane{max-height:none}            /* let the whole page scroll, not a nested box */
+    .doc-tab{padding:7px 12px;font-size:12px} /* bigger tap targets */
+    .drawer h3{font-size:20px}
+    .field h4{font-size:11px}
+    .copy-btn{padding:6px 12px;font-size:12px}
+  }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <button class="burger" id="burger" aria-label="menu">☰</button>
+  <span class="tb-brand">ar<span class="u">cs</span></span>
+  <span class="tb-scope" id="tbScope"></span>
+</header>
+<div class="nav-scrim" id="navScrim"></div>
+<div class="app">
+  <aside class="rail">
+    <div class="brand"><h1>ar<span class="u">cs</span></h1><span class="v">v2 · portfolio</span></div>
+    <h5>scope</h5>
+    <div id="scopeList"></div>
+    <div id="viewBox"></div>
+    <h5>display</h5>
+    <div class="ctl"><label>group by</label>
+      <select id="groupBy"><option value="none">— flat</option><option value="status">status</option><option value="cluster">theme</option><option value="release">release</option></select></div>
+    <div class="ctl"><label>color by</label>
+      <select id="colorBy"><option value="status">status</option><option value="cluster">theme</option></select></div>
+    <div class="toggle on" id="tgClosed"><span>show closed</span><span class="sw"></span></div>
+    <div class="toggle" id="tgDense"><span>compact</span><span class="sw"></span></div>
+  </aside>
+  <main id="main">
+    <div class="crumb" id="crumb"></div>
+    <div class="view-head"><h2 id="vh-title"></h2><p id="vh-sub"></p></div>
+    <div class="view-body" id="body"></div>
+    <div class="foot">read-only tooling over every .arcs/ on disk — throwaway prototype, separate from arcs core</div>
+  </main>
+</div>
+<div class="drawer-bg" id="drawerBg"></div>
+<aside class="drawer" id="drawer"><button class="close-x" id="closeX">×</button><div id="drawerBody"></div></aside>
+
+<script>
+/*__ARCS_DATA__*/
+PROJECTS.forEach(p=>p.arcs.forEach(a=>{a._pid=p.id; if(a.slug[0]==="@")a.isGoal=true;}));
+const projById=id=>PROJECTS.find(p=>p.id===id);
+const pstat=p=>{const t=p.arcs.length,c=p.arcs.filter(a=>a.st==="closed").length,
+  ac=p.arcs.filter(a=>a.st==="active").length,g=p.arcs.filter(a=>a.isGoal).length;
+  return{t,c,ac,g,pct:t?Math.round(c/t*100):0}};
+const allActive=()=>PROJECTS.flatMap(p=>p.arcs.filter(a=>a.st==="active").map(a=>({a,p})));
+const allGoals=()=>PROJECTS.flatMap(p=>p.arcs.filter(a=>a.isGoal).map(a=>({a,p})));
+
+const esc=s=>(s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+const trunc=(s,n)=>s.length>n?s.slice(0,n-1)+"…":s;
+const idStr=a=>(a.st==="closed"?"__":"")+String(a.n).padStart(2,"0")+"-"+a.slug+(a.st==="closed"?"__":"");
+
+const ST={scope:"portfolio",pview:"overview",view:"board",groupBy:"none",colorBy:"status",showClosed:true,dense:false,digestDays:3};
+
+const DGK={ship:{i:"⬆",c:"var(--open)"},close:{i:"✓",c:"var(--accent-2)"},open:{i:"●",c:"var(--goal)"},feat:{i:"+",c:"var(--accent)"},idle:{i:"·",c:"var(--ink-faint)"}};
+
+/* ---------- RAIL ---------- */
+function renderRail(){
+  // scope list
+  const sl=document.getElementById("scopeList");
+  let h=`<button class="scope-btn all" data-scope="portfolio" aria-selected="${ST.scope==="portfolio"}">
+    <span class="pdot"></span><span class="pn">all projects</span><span class="pc">${PROJECTS.length}</span></button>`;
+  PROJECTS.forEach(p=>{const s=pstat(p);
+    h+=`<button class="scope-btn" data-scope="${p.id}" aria-selected="${ST.scope===p.id}">
+      <span class="pdot" style="background:${p.pc}"></span><span class="pn">${p.name}</span>
+      <span class="pc">${s.ac?"●"+s.ac:s.t}</span></button>`;});
+  sl.innerHTML=h;
+  sl.querySelectorAll(".scope-btn").forEach(b=>b.onclick=()=>{ST.scope=b.dataset.scope;ST.view="board";ST.pview="overview";render()});
+  // view box
+  const vb=document.getElementById("viewBox");
+  if(ST.scope==="portfolio"){
+    vb.innerHTML=`<h5>portfolio</h5>
+      ${vbtn("overview","◆","overview",true)}${vbtn("digest","◷","digest",true)}${vbtn("active","●","all active",true)}${vbtn("goals","◇","all goals",true)}`;
+    vb.querySelectorAll(".vbtn").forEach(b=>b.onclick=()=>{ST.pview=b.dataset.v;renderRail();render()});
+  }else{
+    vb.innerHTML=`<h5>view</h5>
+      ${vbtn("board","▤","board")}${vbtn("lineage","⤳","lineage")}${vbtn("timeline","◷","timeline")}${vbtn("map","▦","map")}`;
+    vb.querySelectorAll(".vbtn").forEach(b=>b.onclick=()=>{ST.view=b.dataset.v;renderRail();render()});
+  }
+  // mobile topbar: reflect current scope + view
+  const tb=document.getElementById("tbScope");
+  if(tb){const pn=ST.scope==="portfolio"?"all projects":(projById(ST.scope)?.name||ST.scope);
+    tb.textContent=pn+" · "+(ST.scope==="portfolio"?ST.pview:ST.view);}
+}
+function vbtn(v,ic,label,isP){const sel=isP?ST.pview===v:ST.view===v;
+  return `<button class="vbtn" data-v="${v}" aria-selected="${sel}"><span class="ic">${ic}</span> ${label}</button>`;}
+
+/* ---------- RENDER ---------- */
+// persist scope+view in BOTH the URL hash (shareable, survives reload) and localStorage
+// (survives reopening a bare URL). hash wins when present.
+function writeHash(){const v=ST.scope==="portfolio"?ST.pview:ST.view;const h="#"+ST.scope+"/"+v;
+  if(location.hash!==h){try{history.replaceState(null,"",h)}catch(e){}}
+  try{localStorage.setItem("arcs-dash",ST.scope+"/"+v)}catch(e){}}
+function applyState(sc,v){if(!sc)return false;
+  if(sc==="portfolio"){ST.scope="portfolio";if(["overview","digest","active","goals"].includes(v))ST.pview=v;return true;}
+  if(projById(sc)){ST.scope=sc;if(["board","lineage","timeline","map"].includes(v))ST.view=v;return true;}
+  return false;}
+function readHash(){
+  const m=decodeURIComponent(location.hash||"").replace(/^#/,"").split("/");
+  if(applyState(m[0],m[1]||""))return;
+  try{const s=(localStorage.getItem("arcs-dash")||"").split("/");applyState(s[0],s[1]||"");}catch(e){}}
+function render(){
+  writeHash();
+  renderRail();
+  const body=document.getElementById("body");
+  body.className="view-body"+(ST.dense?" density-compact":"");
+  const crumb=document.getElementById("crumb");
+  if(ST.scope==="portfolio"){
+    crumb.innerHTML="portfolio";
+    const meta={overview:["portfolio","every arcs project on disk — the cross-project pulse"],
+      digest:["digest","what you actually did — read from git, across all projects"],
+      active:["all active","everything in flight right now, across all projects"],
+      goals:["all goals","every goal arc across all projects"]}[ST.pview];
+    setHead(meta);
+    body.innerHTML = ST.pview==="overview"?renderOverview() : ST.pview==="digest"?renderDigest()
+      : ST.pview==="active"?renderAllActive() : renderAllGoals();
+  }else{
+    const p=projById(ST.scope);
+    crumb.innerHTML=`<a data-home>portfolio</a> / ${p.name}`;
+    crumb.querySelector("[data-home]").onclick=()=>{ST.scope="portfolio";render()};
+    const meta={board:["board","this project's stream — pulse, in-flight, every arc"],
+      lineage:["lineage","how this project's arcs spawn each other"],
+      timeline:["timeline","this project's arcs by release"],
+      map:["map","this project's arcs clustered by theme"]}[ST.view];
+    setHead([p.name+" · "+meta[0],meta[1]]);
+    body.innerHTML = ST.view==="board"?renderBoard(p) : ST.view==="lineage"?renderLineage(p)
+      : ST.view==="timeline"?renderTimeline(p) : renderMap(p);
+  }
+  wireClicks(body);
+}
+function setHead([t,s]){document.getElementById("vh-title").textContent=t;document.getElementById("vh-sub").textContent=s}
+function wireClicks(root){
+  root.querySelectorAll("[data-n]").forEach(el=>el.onclick=()=>{
+    const p=projById(el.dataset.pid||ST.scope); openDrawer(p.arcs.find(a=>a.n==el.dataset.n),p);});
+  root.querySelectorAll("[data-drill]").forEach(el=>el.onclick=e=>{e.stopPropagation();ST.scope=el.dataset.drill;ST.view="board";render()});
+  root.querySelectorAll("[data-more]").forEach(el=>el.onclick=e=>{e.stopPropagation();ST.digestDays=(ST.digestDays||3)+5;render()});
+}
+
+/* ---------- PORTFOLIO VIEWS ---------- */
+// relative age from a unix-seconds timestamp
+const ago=ts=>{if(!ts)return"";let s=Math.floor(Date.now()/1000-ts);if(s<0)s=0;
+  if(s<3600)return Math.max(1,Math.floor(s/60))+"m ago";
+  if(s<86400)return Math.floor(s/3600)+"h ago";
+  if(s<604800)return Math.floor(s/86400)+"d ago";
+  if(s<2629800)return Math.floor(s/604800)+"w ago";
+  return Math.floor(s/2629800)+"mo ago";};
+// most-recently-touched arcs across the whole portfolio (or one project)
+const recentArcs=(n,pool)=>(pool||PROJECTS.flatMap(p=>p.arcs.map(a=>({a,p}))))
+  .filter(x=>x.a.ts).sort((x,y)=>y.a.ts-x.a.ts).slice(0,n);
+function recentCard({a,p}){
+  // closed → what came out; active → the goal / current intent; fallbacks keep it informative
+  const desc=(a.st==="closed"?(a.out||a.goal):(a.goal||a.out))||(a.isGoal&&a.sub?`${a.sub} sub-arcs`:"")||a.inp||"";
+  return `<div class="rc${a.st==="active"?" active":""}" data-n="${a.n}" data-pid="${p.id}">
+    <div class="rc-top"><span class="rc-title">${arcTitle(a)}</span><span class="age">${ago(a.ts)}</span></div>
+    ${desc?`<div class="rc-desc">${esc(trunc(desc,110))}</div>`:""}
+    <div class="rc-foot"><span class="ptag"><span class="pdot" style="background:${p.pc}"></span>${trunc(p.name,18)}</span>
+      <span class="rc-st ${a.st}">${a.isGoal?"goal":a.st==="active"?"active":"done"}</span></div></div>`;}
+function renderOverview(){
+  const tot=PROJECTS.reduce((s,p)=>s+p.arcs.length,0),
+    act=allActive().length,goals=allGoals().length,
+    activeProj=PROJECTS.filter(p=>pstat(p).ac>0).length;
+  const pulse=`<div class="pulse">
+    <div class="ptile proj"><b>${PROJECTS.length}</b><span>projects</span></div>
+    <div class="ptile"><b>${tot}</b><span>arcs total</span></div>
+    <div class="ptile active"><b>${act}</b><span>in flight</span></div>
+    <div class="ptile"><b>${activeProj}</b><span>projects active</span></div>
+    <div class="ptile goal"><b>${goals}</b><span>goal arcs</span></div></div>`;
+  const rec=recentArcs(6);
+  const recent=rec.length?`<div class="now"><h3 class="recent-h">recent work · what you touched last</h3>
+    <div class="now-grid">${rec.map(recentCard).join("")}</div></div>`:"";
+  const now=allActive().length?`<div class="now"><h3>in flight now · ${allActive().length}</h3><div class="now-grid">
+    ${allActive().map(({a,p})=>nowCard(a,p)).join("")}</div></div>`:"";
+  const grid=`<div class="group-label">projects</div><div class="proj-grid">${PROJECTS.map(projCard).join("")}</div>`;
+  return pulse+recent+now+grid;
+}
+function nowCard(a,p){return `<div class="now-card${a.isGoal?" goal":""}" data-n="${a.n}" data-pid="${p.id}">
+  <div class="nc-top"><span class="nc-id">${idStr(a)}</span>
+    <span class="ptag"><span class="pdot" style="background:${p.pc}"></span>${trunc(p.name,16)}</span></div>
+  <div class="nc-goal">${a.goal?esc(a.goal):'<span style="color:var(--ink-faint);font-style:italic">— no one-liner yet —</span>'}</div>
+  <div class="nc-foot">${a.ts?`<span class="tg">${ago(a.ts)}</span>`:""}${a.isGoal&&a.sub?`<span class="tg">${a.sub} sub-arcs</span>`:""}${a.from?`<span class="tg">↳ from ${String(a.from).padStart(2,"0")}</span>`:""}</div></div>`;}
+function projCard(p){const s=pstat(p);const focus=p.arcs.find(a=>a.st==="active");
+  return `<div class="proj-card" style="--pc:${p.pc}" data-drill="${p.id}">
+    <div class="ph"><span class="pdot" style="width:9px;height:9px;border-radius:50%;background:${p.pc}"></span><h3>${p.name}</h3></div>
+    <div class="ppath">${p.path}</div>
+    <div class="pstat">
+      <div><b>${s.t}</b><span>arcs</span></div>
+      <div class="active"><b>${s.ac}</b><span>active</span></div>
+      <div><b>${s.g}</b><span>goals</span></div>
+      <div><b>${s.pct}%</b><span>closed</span></div></div>
+    <div class="pbar"><i style="width:${s.pct}%"></i></div>
+    <div class="pfocus"><span class="lbl">focus</span>${focus?(focus.goal?esc(trunc(focus.goal,80)):idStr(focus)):'<span class="idle">idle — nothing in flight</span>'}</div>
+  </div>`;}
+function renderAllActive(){
+  const xs=allActive();
+  if(!xs.length) return `<div class="empty">nothing in flight anywhere — all projects idle</div>`;
+  return `<div class="now-grid">${xs.map(({a,p})=>nowCard(a,p)).join("")}</div>`;
+}
+function renderAllGoals(){
+  return PROJECTS.map(p=>{const gs=p.arcs.filter(a=>a.isGoal);if(!gs.length)return"";
+    return `<div class="group-label"><span class="dot" style="background:${p.pc}"></span>${p.name} · ${gs.length}</div>`+
+      gs.map(a=>rowRich(a,p)).join("");}).join("");
+}
+// resolve an event {pid,slug} to its live arc; calendar-day label relative to now
+const evArc=e=>{const p=projById(e.pid);return p?{a:p.arcs.find(x=>x.slug===e.slug),p}:null;};
+const dayLabel=ts=>{const d=new Date(ts*1000),n=new Date();
+  const strip=x=>new Date(x.getFullYear(),x.getMonth(),x.getDate()).getTime();
+  const diff=Math.round((strip(n)-strip(d))/864e5);
+  if(diff===0)return"today";if(diff===1)return"yesterday";
+  return d.toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"});};
+function renderDigest(){
+  const evs=(DIGEST.events||[]).slice().sort((a,b)=>b.ts-a.ts);
+  const wk=Date.now()/1000-7*864e2;
+  const cl=evs.filter(e=>e.ts>=wk&&e.k==="closed").length, op=evs.filter(e=>e.ts>=wk&&e.k==="opened").length;
+  const summary=`<div class="dg-narr"><b>${cl}</b> arc${cl===1?"":"s"} closed · <b>${op}</b> opened in the last 7 days — newest first.</div>`;
+  // surfaced candidates across the portfolio, on top
+  const cands=PROJECTS.flatMap(p=>(p.candidates||[]).map(c=>({c,p})));
+  const candBlock=cands.length?`<div class="group-label">surfaced candidates · ${cands.length}</div>
+    <div class="cand-list">${cands.map(({c,p})=>`<div class="cand" data-drill="${p.id}">
+      <span class="cand-k">✦</span><div class="cand-main"><div class="cand-t">${esc(c.slug.replace(/^\d+-/,""))}</div>
+      ${c.text?`<div class="cand-d">${esc(trunc(c.text,100))}</div>`:c.from?`<div class="cand-d">from ${esc(c.from)}</div>`:""}</div>
+      <span class="ptag"><span class="pdot" style="background:${p.pc}"></span>${trunc(p.name,16)}</span></div>`).join("")}</div>`:"";
+  if(!evs.length) return summary+candBlock+`<div class="empty">no arc activity recorded in git yet</div>`;
+  // group events by calendar day, newest day first
+  const days=[],idx={};
+  evs.forEach(e=>{const k=dayLabel(e.ts);if(!(k in idx)){idx[k]=days.length;days.push({k,items:[]});}days[idx[k]].items.push(e);});
+  const show=Math.min(days.length,ST.digestDays||3);
+  const feed=days.slice(0,show).map(day=>`<div class="dg-day"><div class="dg-dayh">${day.k} <span>· ${day.items.length}</span></div>
+    ${day.items.map(e=>{const r=evArc(e);if(!r||!r.a)return"";const a=r.a,p=r.p;
+      const desc=(a.st==="closed"?(a.out||a.goal):(a.goal||a.out))||"";
+      return `<div class="ev ${e.k}" data-n="${a.n}" data-pid="${p.id}">
+        <span class="ev-k ${e.k}">${e.k==="closed"?"✓":"+"}</span>
+        <div class="ev-main"><div class="ev-t"><span class="ev-verb ${e.k}">${e.k}</span> ${arcTitle(a)}
+          <span class="ptag"><span class="pdot" style="background:${p.pc}"></span>${trunc(p.name,14)}</span></div>
+          ${desc?`<div class="ev-d">${esc(trunc(desc,120))}</div>`:""}</div>
+        <span class="age">${ago(e.ts)}</span></div>`;}).join("")}</div>`).join("");
+  const more=show<days.length?`<button class="show-more" data-more="digest">show earlier · ${days.length-show} more day${days.length-show===1?"":"s"}</button>`:"";
+  return summary+candBlock+`<div class="group-label" style="margin-top:24px">activity · by day</div>`+feed+more;
+}
+
+/* ---------- PROJECT VIEWS ---------- */
+const leftColor=a=>ST.colorBy==="cluster"?CLUSTERS[a.cl||"untagged"].cc:(a.st==="closed"?"transparent":a.isGoal?"var(--goal)":a.st==="active"?"var(--open)":"transparent");
+const kidCount=(p,n)=>p.arcs.filter(a=>a.from===n).length;
+// the title is the goal one-liner when set, else the slug itself (the slug IS the name)
+const arcTitle=a=>a.goal?esc(a.goal):esc(a.slug.replace(/^@/,""));
+function rowRich(a,p){
+  const badge=a.isGoal
+    ?(a.st==="closed"?`<span class="badge closed">goal done${a.sub?` ${a.sub}✓`:""}</span>`
+      :`<span class="badge goal">goal${a.sub?` ${a.sub}✓`:""}</span>`)
+    :a.st==="active"?`<span class="badge active">active</span>`:`<span class="badge closed">done</span>`;
+  const kc=kidCount(p,a.n);
+  const meta=`<span class="arc-meta">
+    ${kc?`<span class="g spawn">⑂${kc}</span>`:""}
+    ${a.from?`<span class="g from">↳${String(a.from).padStart(2,"0")}</span>`:""}
+    ${a.out?'<span class="odot" title="output written" style="background:var(--open)"></span>':""}
+    ${a.rel&&a.rel!=="—"&&a.rel!=="next"?`<span class="rel">v${a.rel}</span>`:""}</span>`;
+  return `<div class="arc-row${a.isGoal?" goal":""}${a.st==="closed"?" closed":""}${a.st==="active"?" active":""}"
+    style="border-left-color:${leftColor(a)}" data-n="${a.n}" data-pid="${p.id}">
+    <span class="id">${String(a.n).padStart(2,"0")}</span>
+    <span class="title">${arcTitle(a)}</span>
+    ${meta}<span class="rb">${badge}</span></div>`;
+}
+// newest first everywhere (highest arc number on top)
+function visible(p){let xs=p.arcs.slice().sort((a,b)=>b.n-a.n);if(!ST.showClosed)xs=xs.filter(a=>a.st!=="closed");return xs}
+function grouped(p){const xs=visible(p);
+  if(ST.groupBy==="none")return[["",xs]];
+  if(ST.groupBy==="status")return[["active",xs.filter(a=>a.st==="active")],["goal arcs",xs.filter(a=>a.isGoal&&a.st!=="active")],["closed",xs.filter(a=>a.st==="closed"&&!a.isGoal)]];
+  if(ST.groupBy==="cluster")return Object.keys(CLUSTERS).map(k=>[CLUSTERS[k].name,xs.filter(a=>(a.cl||"untagged")===k),CLUSTERS[k].cc]);
+  if(ST.groupBy==="release"){const rs=[...new Set(xs.map(a=>a.rel))];return rs.map(r=>[r==="next"?"unreleased":(r==="—"?"untagged":"v"+r),xs.filter(a=>a.rel===r)]);}
+}
+function renderBoard(p){
+  const s=pstat(p);
+  const pulse=`<div class="pulse">
+    <div class="ptile"><b>${s.t}</b><span>arcs</span></div>
+    <div class="ptile active"><b>${s.ac}</b><span>in flight</span></div>
+    <div class="ptile goal"><b>${s.g}</b><span>goal arcs</span></div>
+    <div class="ptile"><b>${s.pct}%</b><span>closed</span></div></div>`;
+  const act=p.arcs.filter(a=>a.st==="active");
+  const now=act.length?`<div class="now"><h3>in flight now · ${act.length}</h3><div class="now-grid">${act.map(a=>nowCard(a,p)).join("")}</div></div>`:"";
+  const stream=grouped(p).map(([label,xs,cc])=>{if(!xs.length)return"";
+    const head=label?`<div class="group-label">${cc?`<span class="dot" style="background:${cc}"></span>`:""}${label} <span style="color:var(--ink-faint)">· ${xs.length}</span></div>`:"";
+    return head+xs.map(a=>rowRich(a,p)).join("");}).join("");
+  const sh=ST.groupBy==="none"?`<div class="group-label" style="margin-top:4px">stream · ${visible(p).length}</div>`:"";
+  // surfaced candidates for this project — backlog not yet promoted to arcs
+  const cs=p.candidates||[];
+  const cands=cs.length?`<div class="group-label" style="margin-top:26px">candidates · ${cs.length}</div>
+    <div class="cand-list">${cs.map(c=>`<div class="cand">
+      <span class="cand-k">✦</span><div class="cand-main"><div class="cand-t">${esc(c.slug.replace(/^\d+-/,""))}</div>
+      ${c.text?`<div class="cand-d">${esc(trunc(c.text,100))}</div>`:c.from?`<div class="cand-d">from ${esc(c.from)}</div>`:""}</div></div>`).join("")}</div>`:"";
+  return pulse+now+sh+stream+cands;
+}
+const strokeFor=a=>ST.colorBy==="cluster"?CLUSTERS[a.cl||"untagged"].cc:(a.isGoal?"var(--goal)":a.st==="active"?"var(--open)":"var(--line)");
+const stDot=a=>a.isGoal?"var(--goal)":a.st==="active"?"var(--open)":"var(--ink-faint)";
+function renderLineage(p){
+  const has=p.arcs.some(a=>a.from);
+  if(!has) return `<div class="empty">no recorded lineage in <b>${p.name}</b><br><br>arcs here have no <span style="color:var(--accent-2)">from:</span> / supersedes links yet</div>`;
+  const isHub=n=>p.arcs.filter(a=>a.from===n).length>=3;
+  const parents=[...new Set(p.arcs.filter(a=>a.from).map(a=>a.from))].sort((x,y)=>p.arcs.filter(a=>a.from===y).length-p.arcs.filter(a=>a.from===x).length);
+  const linked=new Set();parents.forEach(pr=>{linked.add(pr);p.arcs.filter(a=>a.from===pr).forEach(k=>linked.add(k.n))});
+  const colW=242,nodeH=50,padX=24,padY=24,colGap=108;const pos={};let y=padY;
+  parents.forEach(pr=>{const kids=p.arcs.filter(a=>a.from===pr&&(ST.showClosed||a.st!=="closed"));
+    const span=Math.max(1,kids.length),bh=span*nodeH+(span-1)*8;
+    pos[pr]={x:padX,y:y+(bh-nodeH)/2};kids.forEach((k,i)=>pos[k.n]={x:padX+colW+colGap,y:y+i*(nodeH+8)});y+=bh+22;});
+  const W=padX+colW+colGap+colW+padX,H=y+padY;const byN=Object.fromEntries(p.arcs.map(a=>[a.n,a]));
+  const nodeSVG=(n,pp)=>{const a=byN[n];if(!a)return"";const hub=isHub(+n);
+    return `<g class="node${hub?" hub":""}" data-n="${n}" data-pid="${p.id}">
+      <rect x="${pp.x}" y="${pp.y}" width="${colW}" height="${nodeH}" rx="11" style="stroke:${strokeFor(a)};stroke-width:${hub?2:1.3}"/>
+      <circle cx="${pp.x+colW-15}" cy="${pp.y+15}" r="4.5" fill="${stDot(a)}"/>
+      ${hub?`<text class="hublabel" x="${pp.x+13}" y="${pp.y-6}">⬡ HUB · spawned ${p.arcs.filter(x=>x.from===+n).length}</text>`:""}
+      <text class="nl1" x="${pp.x+13}" y="${pp.y+21}">${String(a.n).padStart(2,"0")}·${trunc(a.slug.replace(/^@/,""),22)}</text>
+      <text class="nl2" x="${pp.x+13}" y="${pp.y+38}">${a.goal?esc(trunc(a.goal,34)):"— blank —"}</text></g>`;};
+  let edges="",nodes="";Object.entries(pos).forEach(([n,pp])=>nodes+=nodeSVG(n,pp));
+  p.arcs.forEach(a=>{if(!a.from||!pos[a.from]||!pos[a.n])return;const s=pos[a.from],t=pos[a.n],x1=s.x+colW,y1=s.y+nodeH/2,x2=t.x,y2=t.y+nodeH/2,mx=(x1+x2)/2;
+    edges+=`<path class="edge ${isHub(a.from)?"from-hub":""}" d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2-8},${y2}"/>`;});
+  return `<div class="lin-summary"><span><b>${linked.size}</b> in lineage</span><span><b>${parents.length}</b> spawned children</span><span><b>${parents.filter(isHub).length}</b> hubs</span><span><b>${p.arcs.length-linked.size}</b> standalone</span></div>
+    <div class="graph-shell"><svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+    <defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="var(--ink-faint)"/></marker></defs>
+    ${edges}${nodes}</svg></div>`;
+}
+function renderTimeline(p){
+  const rs=[...new Set(p.arcs.map(a=>a.rel))];
+  // newest first: unreleased, then releases descending, then untagged
+  const rels=rs.filter(r=>r!=="—"&&r!=="next").sort().reverse();
+  const ordered=(rs.includes("next")?["next"]:[]).concat(rels).concat(rs.includes("—")?["—"]:[]);
+  if(ordered.length<=1&&ordered[0]==="—"){
+    // no releases recorded: a plain newest-first history
+    return `<div class="tl"><div class="tl-rel"><b>history</b><span>· ${visible(p).length} arcs · newest first</span></div>
+      ${visible(p).sort((a,b)=>b.n-a.n).map(a=>tlItem(a,p)).join("")}</div>`;
+  }
+  return `<div class="tl">`+ordered.map(r=>{const xs=visible(p).filter(a=>a.rel===r).sort((a,b)=>b.n-a.n);if(!xs.length)return"";
+    return `<div class="tl-rel"><b>${r==="next"?"unreleased":r==="—"?"untagged":"v"+r}</b><span>· ${xs.length} arcs</span></div>`+xs.map(a=>tlItem(a,p)).join("");}).join("")+`</div>`;
+}
+const tlItem=(a,p)=>`<div class="tl-item ${a.st} ${a.isGoal?"goal":""}" data-n="${a.n}" data-pid="${p.id}"><span class="id">${String(a.n).padStart(2,"0")}</span> &nbsp;<span class="t">${arcTitle(a)}</span></div>`;
+function renderMap(p){
+  const keys=Object.keys(CLUSTERS).filter(k=>p.arcs.some(a=>(a.cl||"untagged")===k));
+  return `<div class="map">`+keys.map(k=>{const c=CLUSTERS[k],xs=visible(p).filter(a=>(a.cl||"untagged")===k);if(!xs.length)return"";
+    return `<div class="cluster" style="--cc:${c.cc}"><h3>${c.name}</h3><div class="cnt">${xs.length} arcs · ${xs.filter(a=>a.st==="active").length} active</div>
+      ${xs.map(a=>`<span class="chip" data-n="${a.n}" data-pid="${p.id}"><span class="d" style="background:${a.isGoal?'var(--goal)':a.st==='active'?'var(--open)':'var(--ink-faint)'}"></span>${String(a.n).padStart(2,"0")}·${trunc(a.slug.replace(/^@/,""),16)}</span>`).join("")}</div>`;}).join("")+`</div>`;
+}
+
+/* ---------- DRAWER ---------- */
+const drawer=document.getElementById("drawer"),bg=document.getElementById("drawerBg");
+// tiny markdown-lite: headings + **bold**, everything else preserved as wrapped text
+function mdLite(t){
+  return esc(t).split("\n").map(l=>{
+    const h=l.match(/^(#{1,6})\s+(.*)$/);
+    if(h)return `<span class="md-h">${h[2]}</span>`;
+    return l.replace(/\*\*(.+?)\*\*/g,"<b>$1</b>");
+  }).join("\n");
+}
+let DOCS=[],DOCI=0;  // current drawer's documents + active index
+function renderDocPane(){
+  const pane=document.getElementById("docPane"),tabs=document.getElementById("docTabs");
+  if(!DOCS.length){tabs.innerHTML="";pane.innerHTML='<div class="doc-empty">no readable content recorded yet</div>';return;}
+  tabs.innerHTML=DOCS.map((d,i)=>`<button class="doc-tab ${i===DOCI?"on":""}" data-di="${i}">${esc(d.p)}</button>`).join("");
+  pane.innerHTML=`<pre>${mdLite(DOCS[DOCI].t)}</pre>`;
+  tabs.querySelectorAll(".doc-tab").forEach(b=>b.onclick=()=>{DOCI=+b.dataset.di;renderDocPane()});
+}
+function openDrawer(a,p){
+  if(!a)return;const parent=a.from?p.arcs.find(x=>x.n===a.from):null,kids=p.arcs.filter(x=>x.from===a.n);
+  const stB=a.st==="active"?'<span class="badge active">● active</span>':'<span class="badge closed">done</span>';
+  const ws=a.ws>0?`${a.ws} working file${a.ws>1?"s":""}`:"empty — no intermediate work";
+  const path=a.path||`${p.path}/.arcs/arcs/${idStr(a)}`;
+  // assemble readable docs: real files (output → workspace → input) first, md body LAST
+  DOCS=[];DOCI=0;
+  (a.files||[]).forEach(f=>DOCS.push({p:f.p,t:f.t}));
+  if(a.body)DOCS.push({p:a.isGoal?"goal.md":"arc.md",t:a.body});
+  // default tab by intent: closed → output (the result); active → current state (workspace,
+  // or a goal's "where we are" body); arc.md is the boilerplate fallback, never the default.
+  const findP=pre=>DOCS.findIndex(d=>d.p.indexOf(pre)===0), bodyI=()=>DOCS.findIndex(d=>d.p.indexOf("/")<0);
+  const order=a.st==="closed"?["output/","workspace/","input/","#body"]
+    :a.isGoal?["workspace/","#body","input/","output/"]
+    :["workspace/","input/","output/","#body"];
+  for(const o of order){const i=o==="#body"?bodyI():findP(o); if(i>=0){DOCI=i;break;}}
+  const allEmpty=!a.inp&&!a.out&&!(a.ws>0);
+  document.getElementById("drawerBody").innerHTML=`
+    <div class="d-id">${p.name} / ${idStr(a)}</div>
+    <h3>${esc(a.slug.replace(/^@/,""))}</h3>
+    <div class="d-meta">${stB}${a.isGoal?'<span class="badge goal">@ goal</span>':""}
+      <span class="badge soft">${CLUSTERS[a.cl||"untagged"].name}</span>
+      ${a.rel&&a.rel!=="—"?`<span class="badge soft">${a.rel==="next"?"unreleased":"v"+a.rel}</span>`:""}</div>
+    <div class="field"><h4>goal</h4><p class="lead">${a.goal?esc(a.goal):"— no one-liner written —"}</p></div>
+    ${a.isGoal&&a.sub?`<div class="field"><h4>checklist · sub-arcs</h4><div class="prog"><div class="prog-bar" style="width:100%"></div></div><p class="dim">${a.sub}/${a.sub} closed</p></div>`:""}
+    ${allEmpty?`<div class="field"><h4>stages</h4><p class="dim">input → workspace → output · nothing recorded yet</p></div>`:`
+    <div class="stage">
+      <div class="stage-step ${a.inp?"has":""}"><span class="dot"></span><div><b>input</b><p>${a.inp?esc(a.inp):"— nothing recorded —"}</p></div></div>
+      <div class="stage-step ${a.ws>0?"has":""}"><span class="dot"></span><div><b>workspace</b><p>${ws}</p></div></div>
+      <div class="stage-step ${a.out?"has":""}"><span class="dot"></span><div><b>output</b><p>${a.out?esc(a.out):"— not yet written —"}</p></div></div></div>`}
+    <div class="field"><h4>content</h4><div class="doc-tabs" id="docTabs"></div><div class="doc-pane" id="docPane"></div></div>
+    ${(parent||kids.length)?`<div class="field"><h4>lineage</h4>
+      ${parent?`<div class="ln-row"><span class="ln-tag">from</span><span class="lineage-link" data-jn="${parent.n}">${idStr(parent)}</span></div>`:""}
+      ${kids.map(k=>`<div class="ln-row"><span class="ln-tag">spawned</span><span class="lineage-link" data-jn="${k.n}">${idStr(k)}</span></div>`).join("")}</div>`:""}
+    <div class="field"><h4>path</h4><div class="path-row"><span class="mono-sm">${esc(path)}</span><button class="copy-btn" id="copyPath">copy</button></div></div>`;
+  renderDocPane();
+  document.getElementById("copyPath").onclick=e=>{navigator.clipboard?.writeText(path);e.target.textContent="copied";setTimeout(()=>e.target.textContent="copy",1200)};
+  drawer.classList.add("show");bg.classList.add("show");document.body.classList.add("modal-open");
+  drawer.scrollTop=0;
+  drawer.querySelectorAll(".lineage-link").forEach(l=>l.onclick=()=>openDrawer(p.arcs.find(x=>x.n==l.dataset.jn),p));
+}
+const closeDrawer=()=>{drawer.classList.remove("show");bg.classList.remove("show");document.body.classList.remove("modal-open")};
+document.getElementById("closeX").onclick=closeDrawer;bg.onclick=closeDrawer;
+addEventListener("keydown",e=>e.key==="Escape"&&closeDrawer());
+
+/* ---------- wiring ---------- */
+document.getElementById("groupBy").onchange=e=>{ST.groupBy=e.target.value;render()};
+document.getElementById("colorBy").onchange=e=>{ST.colorBy=e.target.value;render()};
+function tog(id,key){const el=document.getElementById(id);el.onclick=()=>{el.classList.toggle("on");ST[key]=el.classList.contains("on");render()}}
+tog("tgClosed","showClosed");tog("tgDense","dense");
+readHash();addEventListener("hashchange",()=>{readHash();render()});
+
+/* ---------- mobile nav (off-canvas rail) ---------- */
+const navScrim=document.getElementById("navScrim");
+const openNav=()=>document.body.classList.add("nav-open");
+const closeNav=()=>document.body.classList.remove("nav-open");
+document.getElementById("burger").onclick=openNav;
+navScrim.onclick=closeNav;
+addEventListener("keydown",e=>e.key==="Escape"&&closeNav());
+// picking a scope/view in the rail closes the drawer on mobile
+document.querySelector("aside.rail").addEventListener("click",e=>{
+  if(e.target.closest(".scope-btn,.vbtn"))closeNav();
+});
+
+render();
+</script>
+</body>
+</html>

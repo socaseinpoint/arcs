@@ -6,6 +6,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **`arcs dashboard`** — a read-only static viewer over every `.arcs/` project on disk.
+  Scans siblings (or given roots), parses arcs + git into one self-contained HTML, and
+  opens it in the browser. Portfolio + project levels, five lenses (overview, digest,
+  all-active, all-goals; board, lineage, timeline, map), drill-in, and display controls.
+  Pure bash + git, zero new runtime deps; data injected inline (no server/port). It only
+  reads `.arcs/` — never writes it. Generated page is cached per-user under
+  `${XDG_CACHE_HOME:-~/.cache}/arcs/`. Responsive: a mobile topbar + off-canvas rail and
+  reflowed grids make it usable on a phone (open the cached file over your LAN). The arc
+  detail opens a **content view** — read the real `arc.md` + `output/`/`input/` files inline
+  (tabbed, output-first), copy the on-disk path, jump along lineage; on mobile it's a
+  full-screen sheet. The **digest** reports real work from git — arcs closed/opened and
+  releases per project, sorted by activity, idle projects collapsed.
+
 ## [0.4.0] - 2026-06-19
 
 ### Changed
