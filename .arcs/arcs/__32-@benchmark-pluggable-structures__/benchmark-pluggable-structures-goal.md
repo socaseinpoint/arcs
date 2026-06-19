@@ -1,7 +1,7 @@
 # benchmark-pluggable-structures-goal — benchmark whether arcs structure helps
 
 goal: build a bench stand measuring arcs vs bare on tokens/time/quality
-status: active
+status: done
 # supersedes: <slug of the goal whose intent this one pivots from — optional>
 
 # The goal's items = its sub-arcs (NN-slug in arcs/). Progress N/M = closed (__) / total. Create them with: arcs new-arc -g <slug> <item>
@@ -17,4 +17,12 @@ one cheap model (Sonnet) and compares tokens, wall-time, and quality
 structure later is just a new arm. Pluggability in the CLI comes after the stand
 proves the measurement.
 
-Design spec: input/design.md. Next bottleneck: scaffold the harness (sub-arc 01).
+Design spec: input/design.md.
+
+DONE. Stand built + validated on real API (24-cell first run, sub-arc 03). Result:
+on trivial tasks arcs is pure overhead (input ×3, time ×2, quality flat-to-worse) —
+the measured floor, since these tasks are below where structure pays off. The goal
+(a working, structure-agnostic bench with a pluggable arms/ layer) is met. Open
+follow-up (next goal): a non-trivial task suite + alt-structure arms once CLI
+pluggability lands — only then can we answer "which structure fits which work".
+See arcs/03-first-run-and-report/output/.

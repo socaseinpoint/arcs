@@ -8,3 +8,4 @@
 
 # benchmark run artifacts (keep the harness, not the runs)
 bench/results/
+bench/run.log
