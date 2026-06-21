@@ -619,7 +619,9 @@ cmd_dashboard() {
   # inject: split the template on the placeholder line, write data in between.
   # awk reading a temp file (not sed s///) — the data carries every special char.
   local dtmp; dtmp="$(mktemp)"; printf '%s\n' "$data" > "$dtmp"
-  awk -v dataf="$dtmp" '
+  # LC_ALL=C: the data block carries UTF-8 (and possibly head-c-truncated multibyte);
+  # byte locale keeps macOS awk from choking on it (towc multibyte conversion failure).
+  LC_ALL=C awk -v dataf="$dtmp" '
     index($0,"/*__ARCS_DATA__*/") { while ((getline line < dataf) > 0) print line; next }
     { print }
   ' "$tpl" > "$out" || { rm -f "$dtmp"; die "failed to write $out"; }

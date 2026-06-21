@@ -5,6 +5,12 @@
 # presentation layer (separate from arcs core) — see .arcs/.../33-arcs-dashboard-design.
 set -euo pipefail
 
+# Byte locale: read_capped truncates with `head -c`, which can cut a multibyte
+# (e.g. Cyrillic) char mid-sequence. Under a UTF-8 locale macOS awk then dies with
+# "towc: multibyte conversion failure". C locale treats input as raw bytes — the
+# UTF-8 stays intact byte-for-byte in the emitted JS, and awk never converts.
+export LC_ALL=C LANG=C
+
 # --- helpers ---------------------------------------------------------------
 # Emit a quoted JS string: escape \ and ", strip newlines/tabs/CR, collapse runs of space.
 jstr() {
