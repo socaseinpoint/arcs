@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-06-20
+
 ### Added
 - **`arcs dashboard`** — a read-only static viewer over every `.arcs/` project on disk.
   Scans siblings (or given roots), parses arcs + git into one self-contained HTML, and
@@ -19,6 +21,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (tabbed, output-first), copy the on-disk path, jump along lineage; on mobile it's a
   full-screen sheet. The **digest** reports real work from git — arcs closed/opened and
   releases per project, sorted by activity, idle projects collapsed.
+- **`arcs init` offers to create a git repo.** When run outside a git work tree (and on a TTY),
+  init asks to `git init` + make an initial commit; non-interactive or git-less environments
+  skip silently (arc 40).
+
+### Fixed
+- **Dashboard generation no longer crashes on multibyte content.** The data block is injected
+  under a byte locale (`LC_ALL=C`), so `head -c`-truncated UTF-8 (e.g. a split Cyrillic char)
+  can't trigger macOS awk's `towc: multibyte conversion failure` (arc 41).
+
+### Design
+- **Proof-gated arc profiles** — heavy enforces evidence, light cuts ceremony, over a frozen
+  wire format. Design + adversarial roast only; not yet implemented (arc 38).
 
 ## [0.4.0] - 2026-06-19
 
@@ -160,7 +174,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `arcs update` — one-command self-update (git pull + re-wire skill/hooks).
 - Bilingual (RU/EN) landing page and `examples/basic` walkthrough.
 
-[Unreleased]: https://github.com/socaseinpoint/arcs/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/socaseinpoint/arcs/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/socaseinpoint/arcs/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/socaseinpoint/arcs/compare/v0.3.2...v0.4.0
 [0.3.2]: https://github.com/socaseinpoint/arcs/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/socaseinpoint/arcs/compare/v0.3.0...v0.3.1
