@@ -1,0 +1,4 @@
+# proof-gated-close-rule
+from: 38-arc-profiles-proof-gated
+
+Optional close-requires-proof rule (rules: toggle, off by default): close refuses unless output/proof/ non-empty+referenced. Proof must MEAN something (gate executes check live + independent verifier, author!=verifier; arc 24 — self-administered close is ceremony not enforcement). Two meanings/one slot: code/visual prove by passing, decision/research by recording reasoning. Explicit selection only, no autodetect/enforce/profile-abstraction in v1. NOT 'profiles' — one rule. Lightening is separate + cheaper: behavioral prompt directive (not dir-profile; 3x overhead is round-trips), testable on EXISTING bench suite now. Sequencing: lean-arm first (cheap) -> discriminating bench for heavy (= candidate 01) -> proof rule design falls out. Full verdict+roast: arc 38 output/workspace.
